@@ -1,0 +1,90 @@
+#!/bin/bash
+# 
+
+job=${1} #expRun, expProc, complete (to do everything)
+plotExtension=${2} #png or svg
+
+experimentFolder=.
+
+### path to codes that do brain match, python code for processing matching results and calculating group differences
+brainMatch=$experimentFolder/../../../bin/brainMatch
+scriptFolderPath=$experimentFolder/../scripts
+calcAvgMatchingResults_py=$scriptFolderPath/calcAvgMatchingResults.py
+evaluateMatching_py=$scriptFolderPath/evaluateMatching.py
+heatMap_py=$scriptFolderPath/heatMap.py
+heatMapDouble_py=$scriptFolderPath/heatMapDouble.py
+heatMapStrFunc_py=$scriptFolderPath/heatMapStrFunc.py
+
+
+### path to connectomes, list of samples to be used in the experiment, and cognitive scores of samples
+connectomes_str=$experimentFolder/../data/str
+connectomes_func=$experimentFolder/../data/func
+samples=$experimentFolder/../data/samples.txt
+yeoNetworkPath=$experimentFolder/../data/Yeo_7system_in_Lausanne234.txt
+#subjectsInfoPath='../data/tbi_longitudinal_dtiQAPass_20210121.csv'
+
+
+### output path for the results and plots
+results=$experimentFolder/results
+plotsRoot=$experimentFolder/plots
+
+### parameters to the matching algorithm: assignmentCost can be one of the following <edgesIncludeDiagZeroDiag,edgesIgnoreDiag, edgesIncludeDiagRandDiag> 
+### with the hardness of the problem to be solved in incrasing order
+assignmentCost=" -assCost edgesIncludeDiagRandDiag"
+pathType="-pathType direct" # could have been "-pathType shortestPath" or "-pathType wCommunicability -pathLength 2"
+preprocessGraphs="-preprocessGraphs logScaleStructuralConnectome_traffic_normalizeEdges"
+funcConn=positive #positive or negative
+
+
+########### run matching experiment ##############
+##calculate distance between healthy controls using graph matching
+if( [ "$job" == "expRun" ] || [ "$job" == "complete" ] );then
+	echo -e "\tRunning groupwise brain matching experiment..."
+	mkdir -p $results/rawData/subjectwise $results/rawData/permutationTest
+	$brainMatch -experiment subjectwise match -permutation 10 -modality str_func -funcConn $funcConn -data matrix 1 -dti $connectomes_str/ -fmri $connectomes_func/ -samples $samples -printMatches -outputPath $results/rawData/subjectwise/direct_vs_positive $pathType $assignmentCost $preprocessGraphs
+
+	
+	### do permutation testing by shuffling 
+	seed=$(date +%S)
+	$brainMatch -experiment subjectwise match -permutation 10 -shuffle structure 1 -seed $seed  -modality str_func -funcConn $funcConn -data matrix 1 -dti $connectomes_str/ -fmri $connectomes_func/ -samples $samples -printMatches -outputPath $results/rawData/permutationTest/direct_vs_positive $pathType $assignmentCost $preprocessGraphs
+fi
+
+
+########### connectome level analysis ##############
+resultFileAccuracy=$results/NAS_rt_healthy.res
+if( [ "$job" == "expProc" ] || [ "$job" == "complete" ] );then
+	echo -e "\tProcessing raw experiment results..."
+	colorMap8=OrRd
+	colorMapFull=OrRd
+	bColor=lightblue
+
+	### first, take the average of permutationTest and subjectwise matchings (we need to average both as both are run several times)
+	python $calcAvgMatchingResults_py -res $experimentFolder/results --experimentType both
+
+	### then, evaluate significant matchings for connectome and systems level by evaluating subjectwise matching and permutation testing
+	evaluationsPath=$results/processed
+	mkdir -p $evaluationsPath/Full $evaluationsPath/8
+	python $evaluateMatching_py --resultsSubj $results/rawData/averageSubjectwiseResults.txt --resultsPerm $results/rawData/averagePermutationTestResults.txt --outputFolder $evaluationsPath/ --sign $funcConn --yeoNetworkPath $yeoNetworkPath --numSystems 8
+
+	######fiannly draw some plots
+	echo "draw plots for $path"
+
+	mkdir -p $plotsRoot
+
+	###plot actual and permuted matchings side by side ## --bcolor $bColor --colorMap $colorMap8
+	python $heatMapDouble_py -i $evaluationsPath/actualMatchingMatrixFull.txt  $evaluationsPath/permutedMatchingMatrixFull.txt -o $plotsRoot/actualVSpermutedMatchingFull.png --colorMap $colorMapFull --bcolor $bColor --title Actual\ Matching Permuted\ Matching --scale 100
+	python $heatMapDouble_py -i $evaluationsPath/actualMatchingMatrix8.txt  $evaluationsPath/permutedMatchingMatrix8.txt -o $plotsRoot/actualVSpermutedMatching8.png --colorMap $colorMapFull --bcolor $bColor --title Actual\ Matching Permuted\ Matching --scale 100
+
+	###plot masked matchings
+	##without permutation testing
+	python $heatMap_py -i $evaluationsPath/significantMatchingsFull.txt -o $plotsRoot/significantMatchingsFull.png --bcolor $bColor --threshold 0.000001 --colorMap $colorMapFull --interpolation nearest --scale 100
+
+	python $heatMapStrFunc_py -i $evaluationsPath/significantMatchings8.txt -o $plotsRoot/significantMatchings8.png --bcolor $bColor --threshold 0.0001 --colorMap $colorMap8 --interpolation nearest --roiNames --scale 100
+
+	echo "done with running matchingEvaluation"
+
+fi
+
+
+
+

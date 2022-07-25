@@ -1,0 +1,65 @@
+/* 
+ * File:   initializerParameters.h
+ * Author: yusuf
+ *
+ * Generated on January 25, 2017, 1:07 PM
+ */
+
+#ifndef INITIALIZERPARAMETERS_H
+#define INITIALIZERPARAMETERS_H
+
+#include <cmath>
+#include <cstdlib>
+#include <iostream>
+#include <vector>
+
+#include "utility.h"
+
+class InitializerParameters
+{
+	public:
+		
+		//<editor-fold defaultstate="collapsed" desc=" Constructors:">
+		InitializerParameters()
+		{
+		}
+		
+		InitializerParameters(const InitializerParameters &other)
+		{
+			pathType = other.pathType;
+			functionalConnectivity = other.functionalConnectivity;
+			functionalConnectivity2 = other.functionalConnectivity2;
+			assignmentCostMode = other.assignmentCostMode;
+			adjustGraphParameters = other.adjustGraphParameters;
+			maxPathLength = other.maxPathLength;
+		}
+		
+		InitializerParameters& operator=(const InitializerParameters& other)
+		{
+			pathType = other.pathType;
+			functionalConnectivity = other.functionalConnectivity;
+			functionalConnectivity2 = other.functionalConnectivity2;
+			assignmentCostMode = other.assignmentCostMode;
+			adjustGraphParameters = other.adjustGraphParameters;
+			maxPathLength = other.maxPathLength;
+		}
+		//</editor-fold>
+		
+
+		virtual void print(std::string mode="all", std::ostream &out=std::cout, std::string endOfLine="\n")
+		{//mode will be either "all" or "parameters"
+			if(mode.compare("all")==0)
+			  out<<pathType<<"\t"<<functionalConnectivity<<"\t"<<functionalConnectivity2
+					  <<"\t"<<assignmentCostMode<<"\t"<<adjustGraphParameters<<"\t"<<maxPathLength<<"\t";
+		}
+
+		std::string pathType;//direct,shortest,strongest,communicability : which measure shall we use for determining distance between pairs of nodes
+		std::string functionalConnectivity;//negative,positive: which type of functional connectivity we will consider
+		std::string functionalConnectivity2;//negative,positive: which type of functional connectivity we will consider, to be used for comparing function with function
+		std::string assignmentCostMode;//features,edges<IgnoreDiag|IncludeDiag<ZeroDiag|RandDiag> >,
+		std::string adjustGraphParameters;//traffic,logScale<All,Edges,Nodes>,normalize<All,Edges,Nodes> Note: order matters
+		int maxPathLength;
+};
+
+#endif /* INITIALIZERPARAMETERS_H */
+

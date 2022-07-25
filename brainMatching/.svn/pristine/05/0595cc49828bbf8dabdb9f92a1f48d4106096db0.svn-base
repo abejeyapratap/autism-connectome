@@ -1,0 +1,180 @@
+#
+# Generated Makefile - do not edit!
+#
+# Edit the Makefile in the project folder instead (../Makefile). Each target
+# has a -pre and a -post target defined where you can add customized code.
+#
+# This makefile implements configuration specific macros and targets.
+
+
+# Environment
+MKDIR=mkdir
+CP=cp
+GREP=grep
+NM=nm
+CCADMIN=CCadmin
+RANLIB=ranlib
+CC=gcc
+CCC=g++
+CXX=g++
+FC=gfortran
+AS=as
+
+# Macros
+CND_PLATFORM=GNU-Linux
+CND_DLIB_EXT=so
+CND_CONF=Debug
+CND_DISTDIR=dist
+CND_BUILDDIR=build
+
+# Include project Makefile
+include Makefile
+
+# Object Directory
+OBJECTDIR=${CND_BUILDDIR}/${CND_CONF}/${CND_PLATFORM}
+
+# Object Files
+OBJECTFILES= \
+	${OBJECTDIR}/src/dataset.o \
+	${OBJECTDIR}/src/edge.o \
+	${OBJECTDIR}/src/experiment.o \
+	${OBJECTDIR}/src/functionCoupling_MI.o \
+	${OBJECTDIR}/src/graph.o \
+	${OBJECTDIR}/src/groupwiseExperiment.o \
+	${OBJECTDIR}/src/linearAssignmentSolver.o \
+	${OBJECTDIR}/src/main.o \
+	${OBJECTDIR}/src/matcher.o \
+	${OBJECTDIR}/src/matrixSimilarity.o \
+	${OBJECTDIR}/src/node.o \
+	${OBJECTDIR}/src/normalizer.o \
+	${OBJECTDIR}/src/strFuncCoupling_MI.o \
+	${OBJECTDIR}/src/structureCoupling_MI.o \
+	${OBJECTDIR}/src/subjectwiseExperiment.o \
+	${OBJECTDIR}/src/test.o \
+	${OBJECTDIR}/src/tools.o
+
+
+# C Compiler Flags
+CFLAGS=
+
+# CC Compiler Flags
+CCFLAGS=
+CXXFLAGS=
+
+# Fortran Compiler Flags
+FFLAGS=
+
+# Assembler Flags
+ASFLAGS=
+
+# Link Libraries and Options
+LDLIBSOPTIONS=
+
+# Build Targets
+.build-conf: ${BUILD_SUBPROJECTS}
+	"${MAKE}"  -f nbproject/Makefile-${CND_CONF}.mk ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/matchingcode
+
+${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/matchingcode: ${OBJECTFILES}
+	${MKDIR} -p ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}
+	${LINK.cc} -o ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/matchingcode ${OBJECTFILES} ${LDLIBSOPTIONS} -lm -ldl
+
+${OBJECTDIR}/src/dataset.o: src/dataset.cpp 
+	${MKDIR} -p ${OBJECTDIR}/src
+	${RM} "$@.d"
+	$(COMPILE.cc) -O3 -Ilib/dlib-19.4 -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/src/dataset.o src/dataset.cpp
+
+${OBJECTDIR}/src/edge.o: src/edge.cpp 
+	${MKDIR} -p ${OBJECTDIR}/src
+	${RM} "$@.d"
+	$(COMPILE.cc) -O3 -Ilib/dlib-19.4 -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/src/edge.o src/edge.cpp
+
+${OBJECTDIR}/src/experiment.o: src/experiment.cpp 
+	${MKDIR} -p ${OBJECTDIR}/src
+	${RM} "$@.d"
+	$(COMPILE.cc) -O3 -Ilib/dlib-19.4 -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/src/experiment.o src/experiment.cpp
+
+${OBJECTDIR}/src/functionCoupling_MI.o: src/functionCoupling_MI.cpp 
+	${MKDIR} -p ${OBJECTDIR}/src
+	${RM} "$@.d"
+	$(COMPILE.cc) -O3 -Ilib/dlib-19.4 -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/src/functionCoupling_MI.o src/functionCoupling_MI.cpp
+
+${OBJECTDIR}/src/graph.o: src/graph.cpp 
+	${MKDIR} -p ${OBJECTDIR}/src
+	${RM} "$@.d"
+	$(COMPILE.cc) -O3 -Ilib/dlib-19.4 -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/src/graph.o src/graph.cpp
+
+${OBJECTDIR}/src/groupwiseExperiment.o: src/groupwiseExperiment.cpp 
+	${MKDIR} -p ${OBJECTDIR}/src
+	${RM} "$@.d"
+	$(COMPILE.cc) -O3 -Ilib/dlib-19.4 -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/src/groupwiseExperiment.o src/groupwiseExperiment.cpp
+
+${OBJECTDIR}/src/linearAssignmentSolver.o: src/linearAssignmentSolver.cpp 
+	${MKDIR} -p ${OBJECTDIR}/src
+	${RM} "$@.d"
+	$(COMPILE.cc) -O3 -Ilib/dlib-19.4 -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/src/linearAssignmentSolver.o src/linearAssignmentSolver.cpp
+
+${OBJECTDIR}/src/main.o: src/main.cpp 
+	${MKDIR} -p ${OBJECTDIR}/src
+	${RM} "$@.d"
+	$(COMPILE.cc) -O3 -Ilib/dlib-19.4 -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/src/main.o src/main.cpp
+
+${OBJECTDIR}/src/matcher.o: src/matcher.cpp 
+	${MKDIR} -p ${OBJECTDIR}/src
+	${RM} "$@.d"
+	$(COMPILE.cc) -O3 -Ilib/dlib-19.4 -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/src/matcher.o src/matcher.cpp
+
+${OBJECTDIR}/src/matrixSimilarity.o: src/matrixSimilarity.cpp 
+	${MKDIR} -p ${OBJECTDIR}/src
+	${RM} "$@.d"
+	$(COMPILE.cc) -O3 -Ilib/dlib-19.4 -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/src/matrixSimilarity.o src/matrixSimilarity.cpp
+
+${OBJECTDIR}/src/node.o: src/node.cpp 
+	${MKDIR} -p ${OBJECTDIR}/src
+	${RM} "$@.d"
+	$(COMPILE.cc) -O3 -Ilib/dlib-19.4 -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/src/node.o src/node.cpp
+
+${OBJECTDIR}/src/normalizer.o: src/normalizer.cpp 
+	${MKDIR} -p ${OBJECTDIR}/src
+	${RM} "$@.d"
+	$(COMPILE.cc) -O3 -Ilib/dlib-19.4 -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/src/normalizer.o src/normalizer.cpp
+
+${OBJECTDIR}/src/strFuncCoupling_MI.o: src/strFuncCoupling_MI.cpp 
+	${MKDIR} -p ${OBJECTDIR}/src
+	${RM} "$@.d"
+	$(COMPILE.cc) -O3 -Ilib/dlib-19.4 -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/src/strFuncCoupling_MI.o src/strFuncCoupling_MI.cpp
+
+${OBJECTDIR}/src/structureCoupling_MI.o: src/structureCoupling_MI.cpp 
+	${MKDIR} -p ${OBJECTDIR}/src
+	${RM} "$@.d"
+	$(COMPILE.cc) -O3 -Ilib/dlib-19.4 -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/src/structureCoupling_MI.o src/structureCoupling_MI.cpp
+
+${OBJECTDIR}/src/subjectwiseExperiment.o: src/subjectwiseExperiment.cpp 
+	${MKDIR} -p ${OBJECTDIR}/src
+	${RM} "$@.d"
+	$(COMPILE.cc) -O3 -Ilib/dlib-19.4 -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/src/subjectwiseExperiment.o src/subjectwiseExperiment.cpp
+
+${OBJECTDIR}/src/test.o: src/test.cpp 
+	${MKDIR} -p ${OBJECTDIR}/src
+	${RM} "$@.d"
+	$(COMPILE.cc) -O3 -Ilib/dlib-19.4 -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/src/test.o src/test.cpp
+
+${OBJECTDIR}/src/tools.o: src/tools.cpp 
+	${MKDIR} -p ${OBJECTDIR}/src
+	${RM} "$@.d"
+	$(COMPILE.cc) -O3 -Ilib/dlib-19.4 -std=c++11 -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/src/tools.o src/tools.cpp
+
+# Subprojects
+.build-subprojects:
+
+# Clean Targets
+.clean-conf: ${CLEAN_SUBPROJECTS}
+	${RM} -r ${CND_BUILDDIR}/${CND_CONF}
+	${RM} ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/matchingcode
+
+# Subprojects
+.clean-subprojects:
+
+# Enable dependency checking
+.dep.inc: .depcheck-impl
+
+include .dep.inc

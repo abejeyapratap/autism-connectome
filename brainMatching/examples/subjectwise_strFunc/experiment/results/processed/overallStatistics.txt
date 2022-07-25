@@ -1,0 +1,4 @@
+# what is the average matching accuracy =>  full:15.94444 	 systems:46.57039
+# what percent of matchings were significant =>  full:70.72222 	 systems:51.86368
+# what percent of significant matchings were accurate =>  full:22.54517 	 systems:89.79385
+# what percent of significant connectome level matchings are within group =>  54.30540 

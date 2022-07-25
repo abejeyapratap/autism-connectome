@@ -1,0 +1,504 @@
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+#include "dataset.h"
+#include "utility.h"
+#include <math.h>
+
+using namespace std;
+
+//<editor-fold defaultstate="collapsed" desc=" Constructors: Dataset()">
+
+Dataset::Dataset(const Dataset& other)
+{
+   graphs = other.graphs;
+   initializerParameters = other.initializerParameters;
+   normalizer = other.normalizer;
+}
+
+Dataset::Dataset(InitializerParameters& _initializerParameters, std::string folderPath, std::string objectNames):initializerParameters(_initializerParameters)
+{
+   loadDataset(folderPath,objectNames);
+}
+
+Dataset::Dataset(InitializerParameters &_initializerParameters,std::string streamlineFolder, std::string fmriNetworkFolder, std::string extraFeaturesFolder, std::string objectNames):initializerParameters(_initializerParameters)
+{
+   loadDataset(streamlineFolder,fmriNetworkFolder,extraFeaturesFolder,objectNames);
+}
+
+//</editor-fold>
+
+//<editor-fold defaultstate="collapsed" desc=" Load/save dataset: loadDataset() X 2, loadDatasetReduced(), saveDataset()">
+
+//loads the dataset into the memory
+//@folderPath: path to the folder that the standardized graph files are stored in
+//@objectNames: list of the object names (one name per line) that we would like to use in the experiment. Object names will be searched for as substrings in filenames.
+void Dataset::loadDataset(std::string folderPath, std::string subjectList, bool printWarning)
+{
+   vector<string> filenames,filenamesTemp;
+
+   Utility::loadFilePathFromFolderSelectivelyPreservingOrder(subjectList,folderPath,filenamesTemp);
+
+   bool disconnectedFlag=false;
+   
+   for(vector<string>::iterator iter = filenamesTemp.begin(); iter!=filenamesTemp.end();iter++)
+   {
+      Graph graph(*iter);
+      filenames.push_back(*iter);
+
+      if(printWarning==true)
+      {
+         cout<<"\t"<<graph.getSubjectId()<<" loaded..."<<endl;
+         //Make a sanity check to see if the structural graph is connected. 
+         //If this error message is fired, and you are doing a structural match, the matching will most likely fail
+         //You should consider removing those subjects from your subject list
+         vector<vector<int> > connectedComponents;
+         graph.calculateNumberOfConnectedComponents("structure",connectedComponents);
+         if(connectedComponents.size()!=1)
+         {
+            if(disconnectedFlag==false)
+               cerr<<"Matcher::loadDataset() -> Dataset contains disconnected structural graph(s):"<<Utility::pruneFilenameFromPath(*iter);
+            else
+               cerr<<", "<<Utility::pruneFilenameFromPath(*iter);
+            disconnectedFlag=true;
+         }
+      }
+   }
+   if(disconnectedFlag==true && printWarning==true)
+      cout<<endl;
+   
+//   Utility::printVector(filenames,std::cout,'\n','\n');//for DEBUG
+   
+   int counter = 0;
+   for(vector<string>::iterator iter = filenames.begin(); iter!=filenames.end();iter++)
+      graphs.insert(std::pair<int,Graph>(counter++,Graph(*iter)));
+}
+
+//loads part of the dataset into the memory that falls in between the row/column start/end
+//@folderPath: path to the folder that the standardized graph files are stored in
+//@objectNames: list of the object names (one name per line) that we would like to use in the experiment. Object names will be searched for as substrings in filenames.
+void Dataset::loadDataset(std::string folderPath, std::string subjectList, int rowStart, int rowEnd, int columnStart,int columnEnd, bool printWarning)
+{
+   vector<string> filenames,filenamesTemp;
+
+   Utility::loadFilePathFromFolderSelectivelyPreservingOrder(subjectList,folderPath,filenamesTemp);
+   
+   bool disconnectedFlag=false;
+   
+   for(vector<string>::iterator iter = filenamesTemp.begin(); iter!=filenamesTemp.end();iter++)
+   {
+      Graph graph(*iter);
+      filenames.push_back(*iter);
+
+      if(printWarning==true)
+      {
+         cout<<"\t"<<graph.getSubjectId()<<" loaded..."<<endl;
+         //Make a sanity check to see if the structural graph is connected. 
+         //If this error message is fired, and you are doing a structural match, the matching will most likely fail
+         //You should consider removing those subjects from your subject list
+         vector<vector<int> > connectedComponents;
+         graph.calculateNumberOfConnectedComponents("structure",connectedComponents);
+         if(connectedComponents.size()!=1)
+         {
+            if(disconnectedFlag==false)
+               cerr<<"Matcher::loadDataset() -> Dataset contains disconnected structural graph(s):"<<Utility::pruneFilenameFromPath(*iter);
+            else
+               cerr<<", "<<Utility::pruneFilenameFromPath(*iter);
+            disconnectedFlag=true;
+         }
+      }
+   }
+   if(disconnectedFlag==true && printWarning==true)
+      cout<<endl;
+   
+   //Utility::printVector(filenames,"\n");//for DEBUG
+   int count=0;
+   for(vector<string>::iterator iter = filenames.begin(); iter!=filenames.end();iter++)
+   {
+      if((count>=rowStart && count<=rowEnd) || (count>=columnStart && count<=columnEnd))
+         graphs.insert(std::pair<int,Graph>(count,Graph(*iter)));
+
+      count++;
+   }
+}
+
+//loads all the dataset but one of the graphs into the memory: dropped graphs is to be used as the test data later on.
+//@folderPath: path to the folder that the standardized graph files are stored in
+//@objectNames: list of the object names (one name per line) that we would like to use in the experiment. Object names will be searched for as substrings in filenames.
+void Dataset::loadDatasetReduced(std::string folderPath, std::string subjectList, int graphToDrop, bool printWarning)
+{
+   vector<string> filenames,filenamesTemp;
+
+   Utility::loadFilePathFromFolderSelectivelyPreservingOrder(subjectList,folderPath,filenamesTemp);
+   
+   bool disconnectedFlag=false;
+   for(vector<string>::iterator iter = filenamesTemp.begin(); iter!=filenamesTemp.end();iter++)
+   {
+      Graph graph(*iter);
+      filenames.push_back(*iter);
+      
+      if(printWarning==true)
+      {
+         cout<<"\t"<<graph.getSubjectId()<<" loaded..."<<endl;
+         //Make a sanity check to see if the structural graph is connected. 
+         //If this error message is fired, and you are doing a structural match, the matching will most likely fail
+         //You should consider removing those subjects from your subject list
+         vector<vector<int> > connectedComponents;
+         graph.calculateNumberOfConnectedComponents("structure",connectedComponents);
+         if(connectedComponents.size()!=1)
+         {
+            if(disconnectedFlag==false)
+               cerr<<"Matcher::loadDataset() -> Dataset contains disconnected structural graph(s):"<<Utility::pruneFilenameFromPath(*iter);
+            else
+               cerr<<", "<<Utility::pruneFilenameFromPath(*iter);
+            disconnectedFlag=true;
+         }
+      }
+   }
+   if(disconnectedFlag==true && printWarning==true)
+      cout<<endl;
+   
+   //Utility::printVector(filenames,"\n");//for DEBUG
+   
+   int counter = 0;
+   for(vector<string>::iterator iter = filenames.begin(); iter!=filenames.end();iter++)
+   {
+      if(counter!=graphToDrop)
+         graphs.insert(std::pair<int,Graph>(counter++,Graph(*iter)));
+      else
+         counter++;
+   }
+}
+
+//for a list of given objects, this function combines the graph information 
+//included in separate files into standard graph file and saves it under the 
+//designated target folder
+//@objectList: list of the object names, one object name per line. Ex:c001_s1
+//@adjMatrixList: list of the adjacency matrix files for each object, one filename per line. File names should include one of the object names in it. Ex:/home/yusuf/data/TBI/Connectivity/matrices/c001_s1_connmat.txt
+//@nodeVolumeList: list of the node volumes files for each object, one filename per line. File names should include one of the object names in it. Ex:/home/yusuf/data/TBI/Connectivity/volumes/c001_s1_target_volumes.txt
+//@outputFolder: path to the folder that the function is going to save combined graph files to. Ex: data/graphs/
+void Dataset::loadDataset(std::string streamlineFolder, std::string fmriNetworkFolder, std::string extraFeaturesFolder, std::string subjectList, bool printWarning)
+{
+   vector<string> streamlineFilenames, fmriNetworkFilenames, extraFeaturesFileNames, subjectNames;
+
+   Utility::loadFileNamesFromList(subjectList,subjectNames);
+   
+   int numSubjects = subjectNames.size();
+   
+   if(streamlineFolder.compare("")!=0)
+   {
+      streamlineFilenames.reserve(numSubjects);
+      Utility::loadFilePathFromFolderSelectivelyPreservingOrder(subjectList,streamlineFolder,streamlineFilenames,true,"");
+   }
+   else
+   {
+      if(printWarning==true)
+         cerr<<"Graphs will not have dti edges!!\n";
+      Utility::fillVector<string>(streamlineFilenames,"",numSubjects);
+   }
+   
+   if(fmriNetworkFolder.compare("")!=0)
+   {
+      fmriNetworkFilenames.reserve(numSubjects);
+      Utility::loadFilePathFromFolderSelectivelyPreservingOrder(subjectList,fmriNetworkFolder,fmriNetworkFilenames,true,"");
+   }
+   else
+   {
+      if(printWarning==true)
+         cerr<<"Graphs will not have functional edges!!\n";
+      Utility::fillVector<string>(fmriNetworkFilenames,"",numSubjects);
+   }
+      
+   
+   if(extraFeaturesFolder.compare("")!=0)
+   {
+      extraFeaturesFileNames.reserve(numSubjects);
+      Utility::loadFilePathFromFolderSelectivelyPreservingOrder(subjectList,extraFeaturesFolder,extraFeaturesFileNames,true,"");
+   }
+   else
+   {
+      if(printWarning==true)
+         cerr<<"Graphs will not have extra node features!!\n";
+      Utility::fillVector<string>(extraFeaturesFileNames,"",numSubjects);
+   }
+   
+   if(streamlineFolder.compare("")==0 && fmriNetworkFolder.compare("")==0 && extraFeaturesFolder.compare("")==0)
+   {
+      cerr<<"Input folder is not entered for reading the connectome data! Exiting..."<<endl;
+      exit(1);
+   }
+      
+   //first, load the graphs
+   for(int i=0;i<numSubjects;i++)
+   {
+      if(streamlineFilenames[i].compare("")!=0 || fmriNetworkFilenames[i].compare("")!=0) // || Utility::fillVector(extraFeaturesFileNames,"",numSubjects);
+      {
+         Graph graph;
+         graph.loadGraph(streamlineFilenames[i],fmriNetworkFilenames[i],extraFeaturesFileNames[i]);
+         graph.setSubjectId(subjectNames[i]);
+         graphs.insert(std::pair<int,Graph>(i,graph));
+         if(printWarning==true)
+         {
+            cout<<"\t"<<graph.getSubjectId()<<"\tdti:"<<(streamlineFilenames[i].compare("")==0?"no":"yes")
+                                            <<"\tfmri:"<<(fmriNetworkFilenames[i].compare("")==0?"no":"yes")
+                                            <<"\textraFeatures:"<<(extraFeaturesFileNames[i].compare("")==0?"no":"yes")<<endl;
+         }
+      }
+      else 
+      {
+         if(printWarning==true)
+            cout<<subjectNames[i]<<" does not have dti and fmri connectomes. Will be discarded from subject list.\n";
+      }
+         
+   }
+   
+   //next, scale graphs (nodeVolumes, location of nodes and/or spatialEdgeWeights) wrt the maxBrainVolume among the entire dataset
+   /*
+   initializerParameters.adjustMode="scale";
+   float maxVolume = -1;
+
+   //find the volume of the brain with maximum total volume
+   for(vector<Graph>::iterator iter=graphs.begin();iter!=graphs.end();iter++)
+   {
+      float volume = iter->getVolume();
+      if(volume > maxVolume)
+         maxVolume = volume;
+   }
+   
+   //scale the graphs wrt the max volume
+   for(vector<Graph>::iterator iter=graphs.begin();iter!=graphs.end();iter++)
+   {
+      if(initializerParameters.adjustMode.compare("scale")==0 || initializerParameters.adjustMode.compare("scaleAlign")==0)
+      {
+         float ratio = cbrt(maxVolume/iter->getVolume());
+         iter->scaleGraph(ratio);
+      }
+   }
+   */
+}
+
+void Dataset::saveDataset(std::string outputFolder)
+{
+   //to save only one of the graphs, use the following line
+   //graphs[0].saveGraph(filenames[0].append".new");
+   //to save the entire dataset, use the following part
+   for(map<int,Graph>::iterator iter=graphs.begin();iter!=graphs.end();iter++)
+   {
+      cout<<outputFolder+iter->second.getSubjectId()+".grp \t saved..."<<endl;
+      iter->second.saveGraph(outputFolder+iter->second.getSubjectId()+".grp");
+   }
+      
+}
+//</editor-fold>
+
+//<editor-fold defaultstate="collapsed" desc=" Modify dataset: shuffleGraphs(), adjustGraphs(), scaleGraphs()">
+void Dataset::shuffleGraphs(int seedSupplement, std::string type)
+{
+   int iteration = 10;
+   if(type.compare("function")==0)
+   {
+      for(map<int,Graph>::iterator iter=graphs.begin();iter!=graphs.end();iter++)
+         //iter->second.shuffleStructuralConnectivityPreservingStructuralNodeStrength(seedSupplement);
+         iter->second.shuffleFunctionalConnectivityPreservingSignedNodeDegree(seedSupplement,iteration);
+   }
+   else if(type.compare("structure")==0)
+   {
+      for(map<int,Graph>::iterator iter=graphs.begin();iter!=graphs.end();iter++)
+         //iter->second.shuffleStructuralConnectivityPreservingStructuralNodeStrength(seedSupplement);
+         iter->second.shuffleStructuralConnectivityPreservingStructuralNodeDegree(seedSupplement,iteration);
+   }
+}
+
+//helper function for calculating the distance between pairs of nodes of the graph
+//depending on the path type chosen by the user as it is provided in @initializerParameters.pathType
+//If it is direct, nothing is done,
+//if it is shortest, strongest, or communicability, then it is calculated in here accordingly.
+void Dataset::preprocessGraphs(int order)
+{
+   //by setting initializerParameters.adjustGraphParameters,
+   //you can logScaleNodes, logScaleEdges, normalizeNodes, normalizeEdges, normalizeAll, traffic (to calculate paths), 
+   //        thresholdByValueStr:13, thresholdByValueFuncAbs:0.2, thresholdByValueFuncPos:0.2, thresholdByValueFuncNeg:-0.2
+   //        thresholdByDensityStr:0.3, thresholdByDensityFuncAbs:0.3, thresholdByDensityFuncPos:0.3, thresholdByDensityFuncNeg:0.3
+   vector<string> parametersTokenized;
+   Utility::splitString(initializerParameters.adjustGraphParameters,"_",parametersTokenized);
+   
+   if(order<0)
+   {
+      for(map<int,Graph>::iterator graphIter=graphs.begin();graphIter!=graphs.end();graphIter++)
+      {
+         for(vector<string>::iterator action=parametersTokenized.begin();action!=parametersTokenized.end();action++)
+         {
+            if(action->compare("traffic")==0)
+               graphIter->second.calculatePath(initializerParameters.pathType,initializerParameters.maxPathLength);
+            else
+               graphIter->second.adjustGraph(*action);
+         }
+      }
+   }
+   else
+   {
+      for(vector<string>::iterator action=parametersTokenized.begin();action!=parametersTokenized.end();action++)
+      {
+         if(action->compare("traffic")==0)
+            graphs[order].calculatePath(initializerParameters.pathType,initializerParameters.maxPathLength);
+         else
+            graphs[order].adjustGraph(*action);
+      }
+   }
+}
+//</editor-fold>
+
+
+//<editor-fold defaultstate="collapsed" desc=" save connectomes: saveAverageConnectomeAcrossSubjects(), saveConnectomeOfSingleSubject(), saveConnectomesOfAllSubjects()">
+
+//this function saves structural or functional connectivity matrix for a single subject into a file
+void Dataset::saveConnectomeOfSingleSubject(int subjectOrder, std::string connectomeType, std::string outputPath)
+{
+   int numNodes= getSizeOfAGraph();//number of nodes in a graph
+   
+   float **connectome = Utility::allocate2Dmemory<float>(numNodes,numNodes);
+    
+   std::string outputPathname = graphs[subjectOrder].getSubjectId() + "_" + connectomeType;
+   
+   Edge::Feature edgeType=Edge::getEdgeType(connectomeType);
+   if(connectomeType.compare("structure")==0)
+      outputPathname += "_" + initializerParameters.pathType;
+   else if(connectomeType.compare("function")==0)
+      outputPathname += "_" + initializerParameters.functionalConnectivity;
+   
+   getConnectivityMatrixForGraph(subjectOrder,edgeType,connectome,initializerParameters.functionalConnectivity);
+   
+   //for the sake of better visualization, fill the diagonal entries with zero
+   Utility::fillDiagonalOfTheMatrix<float>(connectome,0,numNodes);
+   
+   outputPathname += "_connectome.txt";
+   
+   //now, save the connectome
+   Utility::saveMatrixToFile(outputPath+outputPathname,connectome,numNodes,numNodes,'\t','\n',6);
+   
+   Utility::free2Dmemory(connectome,numNodes);
+}
+
+//this function saves the average of structural or functional connectivity matrices for the entire dataset into a file
+//@matcher: the object that include the graphs loaded in it
+//@outputPath: path to the location the output average connectome should be saved. Normally, 
+//             this should be the private variable @outputPath of the "experiment'' object (i.e., this)
+//@connectomeType: type of the connectome that we are going to take the average over. Option are (structure,function) 
+//@functionalSign: in case of connectomeType==function, the function checks for the sign of "functionalConnectivity" 
+//                 for taking the absolute value of terms. Options are (positive,negative)
+void Dataset::saveAverageConnectomeAcrossSubjects(std::string connectomeType, std::string outputPath)
+{
+   int numSubjects = getNumOfSubjects();
+   int numNodes= getSizeOfAGraph();//number of nodes in a graph
+   
+   float **averageConnectome = Utility::allocate2Dmemory<float>(numNodes,numNodes);
+   float **tempConnectome = Utility::allocate2Dmemory<float>(numNodes,numNodes);
+   
+   Utility::fillMatrix<float>(averageConnectome,0.0,numNodes,numNodes);
+   
+   std::string outputPathname = "average_" + connectomeType;
+   
+   Edge::Feature edgeType=Edge::getEdgeType(connectomeType);
+   if(connectomeType.compare("structure")==0)
+      outputPathname += "_" + initializerParameters.pathType + ".txt";
+   else if(connectomeType.compare("function")==0)
+      outputPathname += "_" + initializerParameters.functionalConnectivity + ".txt";
+   
+   for(int i=0;i<numSubjects;i++)
+   {
+      getConnectivityMatrixForGraph(i,edgeType,tempConnectome,initializerParameters.functionalConnectivity);
+      Utility::elementwiseAddMatrices(tempConnectome,averageConnectome,averageConnectome,numNodes,numNodes);
+   }
+   Utility::multiplyMatrixWithScalar<float>(averageConnectome,1.0/(float)numSubjects,numNodes,numNodes);
+   
+   //for the sake of better visualization, fill the diagonal entries with zero
+   Utility::fillDiagonalOfTheMatrix<float>(averageConnectome,0,numNodes);
+   
+   //now, save the connectome
+   Utility::saveMatrixToFile(outputPath+outputPathname,averageConnectome,numNodes,numNodes,'\t','\n',6);
+   
+   Utility::free2Dmemory(tempConnectome,numNodes);
+   Utility::free2Dmemory(averageConnectome,numNodes);
+}
+
+//this function saves structural or functional connectivity matrices for all subjects into a folder
+void Dataset::saveConnectomesOfAllSubjects(std::string connectomeType, std::string outputPath)
+{
+   int numSubjects = getNumOfSubjects();
+   int numNodes= getSizeOfAGraph();//number of nodes in a graph
+     
+   float **connectome = Utility::allocate2Dmemory<float>(numNodes,numNodes);
+   
+   Edge::Feature edgeType=Edge::getEdgeType(connectomeType);
+   
+   for(int subjectOrder=0;subjectOrder<numSubjects;subjectOrder++)
+   {
+      std::string outputPathname = graphs[subjectOrder].getSubjectId();
+      
+      getConnectivityMatrixForGraph(subjectOrder,edgeType,connectome,initializerParameters.functionalConnectivity);
+      Utility::saveMatrixToFile("qwe.txt",connectome,numNodes,numNodes);
+      if(connectomeType.compare("structure")==0)
+         outputPathname += "_" + initializerParameters.pathType + ".txt";
+      else if(connectomeType.compare("function")==0)
+         outputPathname += "_" + initializerParameters.functionalConnectivity + ".txt";
+
+      //for the sake of better visualization, fill the diagonal entries with zero
+      Utility::fillDiagonalOfTheMatrix<float>(connectome,0,numNodes);
+     
+      //now, save the connectome
+      Utility::saveMatrixToFile(outputPath+outputPathname,connectome,numNodes,numNodes,'\t','\n',8);
+   }
+   
+   Utility::free2Dmemory(connectome,numNodes);
+}
+
+//</editor-fold>
+
+//<editor-fold defaultstate="collapsed" desc=" Utility functions: getConnectivityMatrixForGraph(), getNumOfSubjects(), getSizeOfAGraph()  ">
+
+//@nonnegativeConnectivity: if set true, negative connectivity matrix is multiplied with -1 to obtain the absolute value of the correlations.
+void Dataset::getConnectivityMatrixForGraph(int graphOrder, Edge::Feature edgeType, float **matrix, std::string functionalConnectivity, bool nonnegativeConnectivity)
+{
+   graphs[graphOrder].initializeWeightedConnectivityMatrixFromEdgeFeatures(edgeType,matrix);
+   int numNodes=graphs[0].getNumNodes();
+   if(edgeType==Edge::FUNCTIONAL_CONNECTIVITY)
+   {
+      if(functionalConnectivity.compare("positive")==0)
+         Utility::filterOutElementsOfMatrixLessThanThreshold<float>(matrix,0.0,0.0,numNodes,numNodes);
+      else if(functionalConnectivity.compare("negative")==0)
+      {
+         Utility::filterOutElementsOfMatrixGreaterThanThreshold<float>(matrix,0.0,0.0,numNodes,numNodes);
+         if(nonnegativeConnectivity==true)
+            Utility::multiplyMatrixWithScalar<float>(matrix,-1.0,numNodes,numNodes);
+      }
+      else if(functionalConnectivity.compare("full")==0)
+         ;//do nothing, we already loaded the full functional matrix in the first line of the function
+      else
+      {
+         cerr<<"Although requested to load functional connectome, type of connectome is not indicated as one of full/positive/negative."<<endl;
+         cerr<<"Instead, funcitonalConnectivity was set as:"<<functionalConnectivity<<" as it was encountered in Matcher::getConnectivityMatrixForGraph()...Exiting!!"<<endl;
+         exit(1);
+      }
+   }
+}
+
+int Dataset::getNumOfSubjects(std::string folderPath, std::string objectNames)
+{
+   vector<string> filenames;
+
+   Utility::loadFilePathFromFolderSelectivelyPreservingOrder(objectNames,folderPath,filenames);
+   return filenames.size();
+}
+
+int Dataset::getSizeOfAGraph(std::string folderPath, std::string objectNames)
+{
+   vector<string> filenames;
+
+   Utility::loadFilePathFromFolderSelectivelyPreservingOrder(objectNames,folderPath,filenames);
+   Graph graph(filenames[0]);
+   return graph.getNumNodes();
+}
+//</editor-fold>

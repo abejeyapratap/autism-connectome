@@ -1,0 +1,2672 @@
+/* 
+ * File:   graph.cpp
+ * Author: yusuf
+ *
+ * Generated on September 14, 2016, 4:31 PM
+ */
+
+#include "graph.h"
+#include "utility.h"
+#include "geometry.h"
+#include <stack>
+
+using namespace std;
+
+// <editor-fold defaultstate="collapsed" desc=" Base code for Graph class">
+
+// <editor-fold defaultstate="collapsed" desc=" Constructors, destructor, operator=, setRandomGraph(), getSubgraph()">
+Graph::Graph()
+{
+    isDirected = false;
+    diameter = 0;
+    numFeatures = 0;
+    numExtraFeatures=0;
+    subjectId = "noNameYet:emptyGraph";
+}
+
+Graph::Graph(bool _isDirected,int _numFeatures, int _numExtraFeatures, int numNodes, float graphDensity)
+{
+    isDirected = _isDirected;
+    diameter = 0;
+    numFeatures = _numFeatures;
+    numExtraFeatures = _numExtraFeatures;
+    subjectId = "noNameYet:randomGraph";
+
+    int numOfEdges = numNodes*(numNodes-1) * graphDensity;
+    nodes.reserve(numNodes);
+    edges.reserve(numOfEdges);
+    generateRandomNodes(numNodes);
+    generateRandomEdges(numOfEdges);
+}
+
+Graph::Graph(vector<Node> &_nodes, vector<Edge> &_edges)
+{
+    isDirected = false;
+    diameter = 0;
+    numFeatures = _nodes[0].getNumberOfFeatures();
+    numExtraFeatures = _nodes[0].getNumberOfExtraFeatures();
+    subjectId = "noNameYet:graphFromNodesAndEdges";
+
+    nodes = _nodes;
+    edges = _edges;
+}
+
+Graph::Graph(string fileName)
+{
+    isDirected = false;
+    diameter = 0;
+    numFeatures = 0;
+    numExtraFeatures=0;
+    subjectId = Utility::splitString(fileName,"/.",-2);//read the file name from the path and save it as the subjectID of the graph
+
+    loadGraph(fileName);
+}
+
+Graph::Graph(std::string streamlineFile, std::string fmriNetworkFile, std::string bctFeaturesFile)
+{
+    isDirected = false;
+    diameter = 0;
+    numFeatures = 0;
+    numExtraFeatures=0;
+
+    loadGraph(streamlineFile,fmriNetworkFile,bctFeaturesFile);
+}
+
+Graph::Graph(const Graph& other)
+{
+    isDirected = other.isDirected;
+    diameter = other.diameter;
+    numFeatures = other.numFeatures;
+    numExtraFeatures = other.numExtraFeatures;
+    extraFeatureNames = other.extraFeatureNames;
+
+    nodes = other.nodes;
+    edges = other.edges;
+
+    subjectId = other.subjectId;
+}
+
+Graph::~Graph()
+{
+}
+
+Graph& Graph::operator=(const Graph& other)
+{
+    isDirected = other.isDirected;
+    diameter = other.diameter;
+    numFeatures = other.numFeatures;
+    numExtraFeatures = other.numExtraFeatures;
+    extraFeatureNames = other.extraFeatureNames;
+
+    nodes = other.nodes;
+    edges = other.edges;
+
+    subjectId = other.subjectId;
+    return *this;
+}
+
+void Graph::setRandomGraph(bool _isDirected, int _numFeatures, int _numExtraFeatures, int numNodes, float graphDensity)
+{	
+    isDirected = _isDirected;
+    diameter = 0;
+    numFeatures = _numFeatures;
+    numExtraFeatures = _numExtraFeatures;
+	
+    int numOfEdges = numNodes*(numNodes-1) * graphDensity;
+    nodes.reserve(numNodes);
+    edges.reserve(numOfEdges);
+    generateRandomNodes(numNodes);
+   
+    if(graphDensity == 1)
+        makeCompleteGraphFromExistingNodes();
+    else
+        generateRandomEdges(numOfEdges);
+}
+
+//copies the subgraph consisting of first N nodes of this graph to the provided targetGraph
+void Graph::getSubgraph(int firstNNodes, Graph &targetGraph)
+{
+    vector<int> nodeList;
+    nodeList.reserve(firstNNodes);
+
+    for(int i=0;i<firstNNodes;i++)
+        nodeList.push_back(nodes[i].getNodeId());
+
+    getSubgraph(nodeList, targetGraph);
+}
+
+//returns a subgraph of input graph grp consisting of nodes whose IDs are listed in nodesList vector
+void Graph::getSubgraph(vector<int> &nodeList, Graph &targetGraph)
+{
+    targetGraph.isDirected = isDirected;
+    targetGraph.diameter = diameter;
+    targetGraph.numFeatures = numFeatures;
+    targetGraph.numExtraFeatures = numExtraFeatures;
+   
+    //copy edges of this graph that exists in the nodeList into the targetGraph
+    targetGraph.nodes.reserve(nodeList.size());
+    for ( vector<Node>::iterator nodeIter = nodes.begin(); nodeIter != nodes.end(); ++nodeIter )
+    {
+        for ( vector<int>::iterator nodeListIter = nodeList.begin(); nodeListIter != nodeList.end(); ++nodeListIter )
+        {
+            if(*nodeListIter == nodeIter->getNodeId())
+            {
+                targetGraph.nodes.push_back(*nodeIter);
+                break;
+            }
+        }
+    }
+   
+    //copy edges of this graph that involves nodes in the nodeList into the targetGraph
+    for ( vector<int>::iterator nodeListIter = nodeList.begin(); nodeListIter != nodeList.end(); ++nodeListIter )
+    {
+        for ( vector<Edge>::iterator edgeIter = edges.begin(); edgeIter != edges.end(); ++edgeIter )
+        {
+            if(edgeIter->getNode1Id() == *nodeListIter || edgeIter->getNode2Id() == *nodeListIter)
+                targetGraph.edges.push_back(*edgeIter);
+        }
+    }
+}
+//</editor-fold>
+
+// <editor-fold defaultstate="collapsed" desc=" Helpers for graph construction: makeCompleteGraphFromExistingNodes(), generateRandomNodes(), generateRandomEdges(), scaleGraph()">
+
+void Graph::makeCompleteGraphFromExistingNodes()
+{
+    int i,j,counter;
+    int sizeOfNodeSet = nodes.size();
+
+    //generate a complete graph
+    counter = 0;//we start labeling edges from edgeID=0
+    for(i=0;i<sizeOfNodeSet;i++)
+        for(j=0;j<i;j++)//no self edges (for generating self edges, make: (j<=i)
+        {
+            edges.push_back( Edge( counter++,nodes[i],nodes[j]) );
+            edges.push_back( Edge( counter++,nodes[j],nodes[i]) );//this way I am producing an undirected graph
+        }
+}
+
+//generates nodes randomly having values between [0,BOUNDARY]
+void Graph::generateRandomNodes(int numNodes)
+{
+    srand((int)clock());
+    for(int i=0;i<numNodes;i++)
+    {
+		nodes.push_back(Node(i,numFeatures,numExtraFeatures));
+		nodes[i].randomlySetNode(BOUNDARY_FEATURE);
+    }
+}
+
+//generates edges between random node tuples
+void Graph::generateRandomEdges(int numOfEdges)
+{
+    int numNodes = nodes.size();
+
+    //generate a complete graph
+    if(numOfEdges == (numNodes*(numNodes-1)))
+        makeCompleteGraphFromExistingNodes();
+    else	//generate a non-complete graph
+    {
+        int **matrix = new (nothrow) int*[numNodes];//[numNodes][numNodes];//edge matrix
+        for(int i=0;i<numNodes;i++)
+        matrix[i] = new (nothrow) int[numNodes];
+
+        //fill the matrix with zeros
+        for(int i=0;i<numNodes;i++)
+            for(int j=0;j<numNodes;j++)
+                matrix[i][j]=0;
+
+        int p1,p2;
+
+        if(isDirected==true)
+        {
+            int counter=0;//we start labeling edges from edgeID=0;
+            for(;counter<numOfEdges;counter++)
+            {
+                //randomly pick two nodes which does not have an edge in between
+                //here I assume that graph is undirected and does not contain self edges
+                while(true)
+                {
+                    p1 = rand()%numNodes;
+                    p2 = rand()%numNodes;
+                    if(matrix[p1][p2] == 1 || p1==p2)//we don't want self edges
+                        continue;
+                    else 
+                        break;
+                }
+                edges.push_back( Edge(counter, nodes[p1], nodes[p2]) );
+                matrix[p1][p2] = 1;
+            }
+        }
+        else
+        {			
+            //for the edges that we added, we will make zeros to ones until we generate enough number of edges
+            int counter=0;//we start labeling edges from edgeID=0;
+            for(;counter<numOfEdges;counter+=2)
+            {
+                //randomly pick two nodes which does not have an edge in between
+                //here I assume that graph is undirected and does not contain self edges
+                while(true)
+                {
+                    p1 = rand()%numNodes;
+                    p2 = rand()%numNodes;
+                    if(matrix[p1][p2] == 1 || matrix[p2][p1] == 1 || p1==p2)//we don't want self edges, and edges are undirected
+                        continue;
+                    else 
+                        break;
+                }
+                edges.push_back( Edge( counter, nodes[p1], nodes[p2]) );
+                edges.push_back( Edge( counter+1, nodes[p2], nodes[p1]) );
+                matrix[p1][p2] = 1;
+                matrix[p2][p1] = 1;//edges are undirected, so disable the mirror of and edge
+            }
+        }
+
+        for(int i=0;i<numNodes;i++)
+            delete[] matrix[i];
+        delete[] matrix;
+    }
+   
+   //we want all edges to have integer length, minimum possible edge distance being 1.
+   //if we have an edge distance less than 1, we scale it to one and scale the rest of the edges with the same 
+   //scaling factor. If this is not the case, we simply round all the edges to nearest integers.
+   //quantizeEdges();
+}
+
+//given a ratio, scales the entire graph by changing the locations of the nodes and the 
+//edge distances accordingly
+void Graph::scaleGraph(float ratio)
+{
+    for(vector<Edge>::iterator iter=edges.begin();iter!=edges.end();iter++)
+        iter->scaleFeature(Edge::SPATIAL_DISTANCE,ratio);
+}
+// </editor-fold>
+
+// <editor-fold defaultstate="collapsed" desc=" Helper functions: checkTriangleInequality(), checkForZeroWeightEdge(), isDuplicateNode()">
+
+bool Graph::checkTriangleInequality()
+{
+   int numOfEdges = edges.size();
+   for(int i=0; i<numOfEdges; i++)
+   {
+      for(int j=0; j<numOfEdges; j++)
+      {
+         if(edges[i].getNode2Id()==edges[j].getNode1Id() && edges[i].getNode1Id()!=edges[j].getNode2Id())
+         {
+            for(int k=0;k<numOfEdges;k++)
+            {
+               if(edges[k].getNode1Id()==edges[i].getNode1Id() && edges[k].getNode2Id()==edges[j].getNode2Id())
+               {
+                  if(edges[i].getFeature(Edge::SPATIAL_DISTANCE)+edges[j].getFeature(Edge::SPATIAL_DISTANCE)<edges[k].getFeature(Edge::SPATIAL_DISTANCE))
+                  {
+                     return false;
+                  }
+               }
+               
+            }
+         }
+      }
+   }
+   return true;
+}
+
+bool Graph::checkForZeroWeightEdge()
+{
+   bool flag=false;
+   for(vector<Edge>::iterator iter=edges.begin(); iter!=edges.end(); ++iter)
+   {
+      if(iter->getFeature(Edge::SPATIAL_DISTANCE)==0)
+      {
+         cout<<"zero weight edge detected with edge id:"<<iter->getEdgeId()<<endl;
+         flag = true;
+      }
+   }
+   return flag;
+}
+
+bool Graph::isDuplicateNode(Node& node)
+{
+   for(int i=0;i<nodes.size();i++)
+   for(vector<Node>::iterator iter=nodes.begin();iter!=nodes.end();iter++)
+   {
+      float diff = iter->calculateDistance(node);
+      if(diff==0)
+         return true;      
+   }
+   return false;
+}
+//</editor-fold>
+
+// </editor-fold>
+
+// <editor-fold defaultstate="collapsed" desc=" Connectivity related functions: allPairsShortestPath, graphShufflers, initializeNodeEdgeFeatures, helperFunctions">
+
+// <editor-fold defaultstate="collapsed" desc=" communication pattern functions: shortest path, communicability, path transitivity, search information ">
+
+// <editor-fold defaultstate="collapsed" desc=" allPairsShortestPath functions: calculateAllPairsShortestPath()x3 ">
+//calculates all pairs shortest path using floyd-warshall algorithm by using the 
+//@featureType of the edges as the measure of distance
+//outcome of this function is two global matrices that it updates:
+//@distanceMatrix : that keeps shortest distance between pairs
+//@predecessorMatrix: that keeps the shortest path between pairs
+//last parameter @invert is used to take multiplicative inverse of the edge features before calculating the shortest path
+void Graph::calculateAllPairsShortestPath(Edge::Feature featureType, float **distanceMatrix, int **predecessorMatrix,bool invert)
+{
+    int i,j,k;
+
+    int numNodes = nodes.size();
+
+    if(numNodes <= 1)
+    {
+		cerr<<"calculateAllPairsShortestPath() is called for a graph with a single node!! Exiting..\n";
+		exit(1);
+    }
+
+    //if memory is not allocated for the matrices, give error message and exit
+    if(distanceMatrix==NULL || predecessorMatrix==NULL)
+    {
+		cerr<<"calculateAllPairsShortestPath is called with unallocated memory for the distanceMatrix or predecessorMatrix!! Exiting...\n";
+		exit(1);
+    }
+     
+    //matrix pointer to be used for swapping predecessor/current matrix
+    int **pred1, **pred2;
+    float **dist1, **dist2; 
+	
+    //allocate memory for matrices
+    float **distance1 = Utility::allocate2Dmemory<float>(numNodes,numNodes);
+    float **distance2 = Utility::allocate2Dmemory<float>(numNodes,numNodes);
+    int **predecessor1 = Utility::allocate2Dmemory<int>(numNodes,numNodes);
+    int **predecessor2 = Utility::allocate2Dmemory<int>(numNodes,numNodes);
+
+    //////INITIALIZE MATRICES//////////
+    //initialize edge matrix to infinity
+    Utility::fillMatrix<float>(distance1,Geometry::INF,numNodes,numNodes);
+   
+    //fill in the distance matrix with existing edges, put min of edges if we have multiple edges between two same nodes
+    for(vector<Edge>::iterator iter=edges.begin();iter!=edges.end();iter++)
+    {
+		int node1Index = iter->getNode1Id();
+		int node2Index = iter->getNode2Id();
+		float edgeWeight = iter->getFeature(featureType);
+		if(edgeWeight > Utility::EPSILON)//ignore edges that have very small edge weight
+		{
+			if(invert==true)
+				distance1[node1Index][node2Index] = 1.0/edgeWeight;//(distance1[node1Index][node2Index] > edgeWeight) ? edgeWeight : distance1[node1Index][node2Index];
+			else
+				distance1[node1Index][node2Index] = edgeWeight;
+			distance1[node2Index][node1Index] = distance1[node1Index][node2Index];//since the graph is undirected, we need to inverse the edges for all pairs shortest path calculation
+		}
+    }
+   
+    //initialize self edges to zero
+    Utility::fillDiagonalOfTheMatrix<float>(distance1,0,numNodes);
+
+    //initialize predecessor matrix to NIL
+    Utility::fillMatrix<int>(predecessor1,Geometry::NIL,numNodes,numNodes);
+   
+    //fill in the predecessor matrix for existing edges
+    for(vector<Edge>::iterator iter=edges.begin();iter!=edges.end();iter++)
+    {
+		int node1Index = iter->getNode1Id();
+		int node2Index = iter->getNode2Id();
+		predecessor1[node1Index][node2Index] = node1Index;
+		predecessor1[node2Index][node1Index] = node2Index;
+    }
+
+    //ASSIGN pointers to predecessor matrices and distance matrices initially////////////
+    dist1 = distance1;
+    dist2 = distance2;
+
+    pred1 = predecessor1;
+    pred2 = predecessor2;	
+
+    //APPLY FLOYD_WARSHALL algorithm for all pairs shortest path//////
+    //allPairsShortestPath(dist1, dist2, pred1, pred2);
+    for(k=0;k<numNodes;k++)
+    {
+		for(i=0;i<numNodes;i++)
+			for(j=0;j<numNodes;j++)
+			{
+				dist2[i][j] = min(dist1[i][j],dist1[i][k]+dist1[k][j]);
+				pred2[i][j] = (dist1[i][j] <= (dist1[i][k]+dist1[k][j])) ? pred1[i][j] : pred1[k][j];
+			}
+			//swap matrix pointers
+			if(k%2 == 0)
+			{
+				dist1 = distance2;
+				dist2 = distance1;
+
+				pred1 = predecessor2;
+				pred2 = predecessor1;
+			}
+			else
+			{
+				dist1 = distance1;
+				dist2 = distance2;
+
+				pred1 = predecessor1;
+				pred2 = predecessor2;
+			}
+	}
+   
+    if(invert==true)
+    {
+		Utility::multiplicativeInverseMatrix(dist1,numNodes,numNodes);
+		Utility::fillDiagonalOfTheMatrix<float>(dist1,0,numNodes);
+    }
+
+    Utility::copyMatrix(dist1,distanceMatrix,numNodes,numNodes);
+    Utility::copyMatrix(pred1,predecessorMatrix,numNodes,numNodes);
+
+    //FREE EXTRA MEMORY///////////
+    Utility::free2Dmemory(dist1,numNodes);
+    Utility::free2Dmemory(dist2,numNodes);
+    Utility::free2Dmemory(pred1,numNodes);
+    Utility::free2Dmemory(pred2,numNodes);
+}
+
+//This function does the same calculations as the previous function, but does not calculate the predecessorMatrix
+void Graph::calculateAllPairsShortestPath(Edge::Feature featureType, float **distanceMatrix,bool invert)
+{
+    int i,j,k;
+
+    int numNodes = nodes.size();
+
+    if(numNodes <= 1)
+    {
+		cerr<<"calculateAllPairsShortestPath() is called for a graph with a single node!! Exiting..\n";
+		exit(1);
+    }
+   
+    //if memory is not allocated for the matrices, give error message and exit
+    if(distanceMatrix==NULL)
+    {
+		cerr<<"calculateAllPairsShortestPath is called with unallocated memory for the distanceMatrix!! Exiting...\n";
+		exit(1);
+    }
+     
+    //matrix pointer to be used for swapping predecessor/current matrix
+    float **dist1, **dist2; 
+	
+    //allocate memory for matrices
+    float **distance1 = Utility::allocate2Dmemory<float>(numNodes,numNodes);
+    float **distance2 = Utility::allocate2Dmemory<float>(numNodes,numNodes);
+
+    //////INITIALIZE MATRICES//////////
+    //initialize edge matrix to infinity
+    Utility::fillMatrix<float>(distance1,Geometry::INF,numNodes,numNodes);
+      
+    //fill in the distance matrix with existing edges, put min of edges if we have multiple edges between two same nodes
+    for(vector<Edge>::iterator iter=edges.begin();iter!=edges.end();iter++)
+    {
+		int node1Index = iter->getNode1Id();
+		int node2Index = iter->getNode2Id();
+		float edgeWeight = iter->getFeature(featureType);
+		if(edgeWeight > Utility::EPSILON)//ignore edges that have very small edge weight
+		{
+			if(invert==true)
+				distance1[node1Index][node2Index] = 1.0/edgeWeight;//(distance1[node1Index][node2Index] > edgeWeight) ? edgeWeight : distance1[node1Index][node2Index];
+			else
+				distance1[node1Index][node2Index] = edgeWeight;
+			distance1[node2Index][node1Index] = distance1[node1Index][node2Index];//since the graph is undirected, we need to inverse the edges for all pairs shortest path calculation
+		}
+    }
+   
+    //initialize self edges to zero
+    Utility::fillDiagonalOfTheMatrix<float>(distance1,0,numNodes);
+
+    //ASSIGN pointers to distance matrices initially////////////
+    dist1 = distance1;
+    dist2 = distance2;
+
+    //APPLY FLOYD_WARSHALL algorithm for all pairs shortest path//////
+    //allPairsShortestPath(dist1, dist2);
+    for(k=0;k<numNodes;k++)
+    {
+		for(i=0;i<numNodes;i++)
+			for(j=0;j<numNodes;j++)
+				dist2[i][j] = min(dist1[i][j],dist1[i][k]+dist1[k][j]);
+		//swap matrix pointers
+		if(k%2 == 0)
+		{
+			dist1 = distance2;
+			dist2 = distance1;
+		}
+		else
+		{
+			dist1 = distance1;
+			dist2 = distance2;
+		}
+    }
+
+    if(invert==true)
+    {
+		Utility::multiplicativeInverseMatrix(dist1,numNodes,numNodes);
+		Utility::fillDiagonalOfTheMatrix<float>(dist1,0,numNodes);
+    }
+   
+    Utility::copyMatrix(dist1,distanceMatrix,numNodes,numNodes);
+
+    //FREE EXTRA MEMORY///////////
+    Utility::free2Dmemory(dist1,numNodes);
+    Utility::free2Dmemory(dist2,numNodes);
+}
+
+//This function takes a filled matrix which already has direct edges set of a graph to non zero values and 
+//nonexisting edges are filled with INF values (or with zeros if invert==true).
+//It returns the all pairs shortest path values filled into the same input matrix
+void Graph::calculateAllPairsShortestPath(float** distanceMatrix, int numNodes,bool invert)
+{
+    int i,j,k;
+
+    if(numNodes <= 1)
+    {
+		cerr<<"calculateAllPairsShortestPath() is called for a graph with a single node!! Exiting..\n";
+		exit(1);
+    }
+   
+    //if memory is not allocated for the matrices, give error message and exit
+    if(distanceMatrix==NULL)
+    {
+		cerr<<"calculateAllPairsShortestPath is called with unallocated memory for the distanceMatrix!! Exiting...\n";
+		exit(1);
+    }
+     
+    //matrix pointer to be used for swapping predecessor/current matrix
+    float **dist1, **dist2; 
+	
+    //allocate memory for matrices
+    float **distance1 = Utility::allocate2Dmemory<float>(numNodes,numNodes);
+    float **distance2 = Utility::allocate2Dmemory<float>(numNodes,numNodes);
+
+    //////INITIALIZE MATRICES//////////
+    //initialize edge matrix with the initial direct edges
+    Utility::copyMatrix<float>(distanceMatrix,distance1,numNodes,numNodes);
+   
+    if(invert==true)
+		Utility::multiplicativeInverseMatrix(distance1,numNodes,numNodes);
+
+    //initialize self edges to zero
+    Utility::fillDiagonalOfTheMatrix<float>(distance1,0,numNodes);
+
+    //ASSIGN pointers to distance matrices initially////////////
+    dist1 = distance1;
+    dist2 = distance2;
+
+    //APPLY FLOYD_WARSHALL algorithm for all pairs shortest path//////
+    //allPairsShortestPath(dist1, dist2);
+    for(k=0;k<numNodes;k++)
+    {
+		for(i=0;i<numNodes;i++)
+			for(j=0;j<numNodes;j++)
+				dist2[i][j] = min(dist1[i][j],dist1[i][k]+dist1[k][j]);
+		//swap matrix pointers
+		if(k%2 == 0)
+		{
+			dist1 = distance2;
+			dist2 = distance1;
+		}
+		else
+		{
+			dist1 = distance1;
+			dist2 = distance2;
+		}
+    }
+
+    if(invert==true)
+    {
+		Utility::multiplicativeInverseMatrix(dist1,numNodes,numNodes);
+		Utility::fillDiagonalOfTheMatrix<float>(dist1,0,numNodes);
+    }
+   
+    Utility::copyMatrix(dist1,distanceMatrix,numNodes,numNodes);
+   
+    //FREE EXTRA MEMORY///////////
+    Utility::free2Dmemory(dist1,numNodes);
+    Utility::free2Dmemory(dist2,numNodes);
+}
+//</editor-fold>
+
+// <editor-fold defaultstate="collapsed" desc=" communicability functions: calculateUnweightedCommunicability(),calculateWeightedCommunicability() ">
+//This function takes a filled matrix which already has direct edges set of a graph to non zero values (non-inverted edge weights)
+//and nonexisting edges are filled with ZERO values.
+//It makes the matrix to be binary by setting the nonzero values to one and the rest to zero.
+//Then, it calculates the communicability of the UNWEIGHTED connectome 
+void Graph::calculateUnweightedCommunicability(float** connectivityMatrix, int numNodes, int maxPathLength)
+{
+    //Formula is as follows: (from Brain Network Analysis Book of Fornito et al, pg. 244)
+    //Com_{ij}=\sum_{n=0}^{power} [A^n]_{ij}/n! = [e^A]_{ij}
+    //where A is the binary adjacency matrix of the connectome
+    if(numNodes <= 1)
+    {
+		cerr<<"calculateUnweightedCommunicability() is called for a graph with a single node!! Exiting..\n";
+		exit(1);
+    }
+   
+    //if memory is not allocated for the matrices, give error message and exit
+    if(connectivityMatrix==NULL)
+    {
+		cerr<<"calculateUnweightedCommunicability() is called with unallocated memory for the distanceMatrix!! Exiting...\n";
+		exit(1);
+    }
+   
+    float **A = connectivityMatrix;
+    Utility::binarizeMatrix<float>(A,Utility::EPSILON,numNodes,numNodes);//values grater than EPSILON are set to one, and the rest is set to zero
+
+    Utility::matrixExponent(A,maxPathLength,numNodes);
+}
+
+//This function takes @distanceMatrix having direct edges of a graph set to non zero values (non-inverted edge weights)
+//and nonexisting edges are filled with ZERO values.
+//It calculates the communicability of the WEIGHTED connectome
+void Graph::calculateWeightedCommunicability(float** connectivityMatrix, std::vector<float> nodeStrengths, int numNodes, int maxPathLength)
+{
+    //Formula is as follows:
+    //Com_{ij}=\sum_{n=0}^{power} [A^n]_{ij}/n! = [e^A]ij
+    //in this weighted version, A=S^(-1/2).W.S^(-1/2)
+    //where S is the diagonal matrix with the diagonal entries representing the strength of a node
+    //and W is the weighted connectivity matrix. Note that, edge weights are not (And should not) inverted
+    if(numNodes <= 1)
+    {
+		cerr<<"calculateWeightedCommunicability() is called for a graph with a single node!! Exiting..\n";
+		exit(1);
+    }
+   
+    //if memory is not allocated for the matrices, give error message and exit
+    if(connectivityMatrix==NULL)
+    {
+		cerr<<"calculateWeightedCommunicability() is called with unallocated memory for the distanceMatrix!! Exiting...\n";
+		exit(1);
+    }
+   
+    //the edges that have weight less than 1 as these will cause to produce a wrong communicability matrix, as taking the exponent of 
+    //values less than 1 will diminish values of the ones that are greater than zero since multiplication of a number with x<1 will make the value smaller.
+    //thus, scale the matrix so that minimum nonzero value becomes equal to 1.
+    // NOTE: this might not be a good practice since it normalizes connectomes to have the minimum nonzero edge being equal to one. 
+    //       This will, for example, remove the difference that one would obtain by normalizing connectome by brain volume when the 
+    //       tractography was generated by seeding per voxel. Thus, such a normalization should better be done at population level to 
+    //       preserve relative strengths of connectivity across subjects. Overall, this part depends very much how you generated the 
+    //       connectomes in the first place. Thus, whenever a normalization would be involved, think twice if what the code makes sense.
+    float minValue = Utility::getNonZeroMinValueOfMatrix<float>(connectivityMatrix,numNodes,numNodes);
+    if(minValue<=1)
+		Utility::multiplyMatrixWithScalar<float>(connectivityMatrix,1.0/minValue,numNodes,numNodes);
+
+   //rename matrices for referring to the formula above
+   float **W = connectivityMatrix;
+   float **A = connectivityMatrix;//we keep the content of the matrix A in the memory allocated for @connectivityMatrix
+   
+   
+    //Strength matrix needs to be inverted and values needs to be taken the square root (i.e., S = S^(-1/2))
+    for(int i=0;i<numNodes;i++)
+	if(nodeStrengths[i]>Utility::EPSILON)//to avoid divide by zero and also ignore the isolated nodes, we discard nodes with zero strength
+	    nodeStrengths[i] = 1.0/std::sqrt(nodeStrengths[i]);
+    //perform A=S^(-1/2).W.S^(-1/2) : that is, components of A becomes w_{ij}/(sqrt(s_i)*sqrt(s_j))
+    for(int i=0;i<numNodes;i++)
+      for(int j=0;j<numNodes;j++)
+         A[i][j] = W[i][j]*nodeStrengths[i]*nodeStrengths[j];
+   
+   Utility::matrixExponent(A,maxPathLength,numNodes);//does not account for e^0 in the final sum, as needed by the communicability
+   
+   //now restore the original scale by scaling with the previous minimum value again
+   if(minValue<=1)
+        Utility::multiplyMatrixWithScalar<float>(connectivityMatrix,minValue,numNodes,numNodes);
+   
+   //further adjustments to the resulting matrix is done in initializeEdgeFeaturesWithWeightedCommunicabilityPath function
+}
+//</editor-fold>
+
+// <editor-fold defaultstate="collapsed" desc=" communication patterns extending shortest path: calculateSearchInformation(),calculatePathTransitivity() ">
+//Search Information: A diffusion based method to calculate a measure for the message passing among the network
+//BAsed on the work of Goni et al 2014, this function first calculates the all pairs shortest path of a network,
+//considers only the predecessor matrix, and then calculates the probability of the shortest path being taken
+//for a random walker. 
+void Graph::calculateSearchInformation(float** searchInformationMatrix, int size)
+{
+   float **connectivityMatrix = Utility::allocate2Dmemory<float>(size,size);
+   int **predecessorMatrix = Utility::allocate2Dmemory<int>(size,size);
+   
+   //we ran all pairs shortest path algorithm with inverted edge weights to obtain the SHORTEST PATH for each pair
+   //Note that, we are interested in the path itself, not the shortest distance. 
+   //This is why we ignore the content of the connectivity matrix array
+   bool invertEdgeWeights=true;
+   Graph::calculateAllPairsShortestPath(Edge::STRUCTURAL_CONNECTIVITY,connectivityMatrix,predecessorMatrix,invertEdgeWeights);
+
+   //now, initialize the connectivity matrix with the direct edge weights.
+   initializeWeightedConnectivityMatrixFromEdgeFeatures(Edge::STRUCTURAL_CONNECTIVITY,connectivityMatrix);
+   vector<float> nodeStrengths;
+   initializeNodeStrengthVectorFromEdgeFeatures(Edge::STRUCTURAL_CONNECTIVITY,nodeStrengths);
+   
+   //initialize search information matrix with 1s, since we will use it to store the multiplication of probabilities (1 is the identity element for multiplication)
+   Utility::fillMatrix<float>(searchInformationMatrix,1.0,size,size);
+   
+   //NOTE: that we are assuming that the graph is connected. Otherwise, the while loop below will never terminate.
+   for(int i=0;i<size;i++)
+      for(int j=0;j<size;j++)
+      {
+         int tail=j;
+         while(tail!=i)
+         {
+            //path is as follows: i, .. , head, tail,..,j
+            //initially tail=j, head is always the node that leads to the tail with a direct connection (edge)
+            //at the end of this loop, head will become i. This will be the last iteration of the loop.
+            int head = predecessorMatrix[i][tail];
+            if(nodeStrengths[i]<Utility::EPSILON)//to avoid divide by zero and also ignore the isolated nodes, we discard nodes with zero strength
+               searchInformationMatrix[i][j] = 0;
+            else
+               searchInformationMatrix[i][j] *= connectivityMatrix[head][tail]/nodeStrengths[head];
+            tail = head;
+         }
+         //remap the probabilities so that we have high search information when the probability of a random walker traversing the shortest path is low and vice versa
+         //searchInformationMatrix[i][j] = -Utility::log2(searchInformationMatrix[i][j]);
+      }
+   
+   //NOTE that, in an undirected graph, resulting matrix will be symmetrical.
+   
+   //we need to remap the search information by taking log2 since the results are in [0,1] interval so far.   
+   for(int i=0;i<size;i++)
+      for(int j=i+1;j<size;j++)
+      {
+         //although i,j and j,i should be equal, just making sure here
+         if(searchInformationMatrix[i][j] <= Utility::EPSILON)
+            searchInformationMatrix[i][j]=0;
+         else
+         {
+            float mappedValue = -(Utility::log2<float>(searchInformationMatrix[i][j]) + Utility::log2<float>(searchInformationMatrix[j][i]))/2.0;
+            searchInformationMatrix[i][j] = 1.0/mappedValue;//take inverse so that the measure cam become "matchable" with direct or communicability
+         }
+
+         searchInformationMatrix[j][i] = searchInformationMatrix[i][j];
+      }
+   Utility::fillDiagonalOfTheMatrix<float>(searchInformationMatrix,0,size);
+   
+   Utility::free2Dmemory<float>(connectivityMatrix,size);
+   Utility::free2Dmemory<int>(predecessorMatrix,size);
+}
+
+//Path Transitivity: A diffusion based method to calculate a measure for the message passing among the network
+//Based on the work of Goni et al 2014, this function first calculates the all pairs shortest path of a network,
+//considers only the predecessor matrix, and then calculates the local detours that traverse two edges to converge 
+//back to the shortest path for a random walker. 
+void Graph::calculatePathTransitivity(float** pathTransitivityMatrix, int size)
+{
+   float **connectivityMatrix = Utility::allocate2Dmemory<float>(size,size);
+   int **predecessorMatrix = Utility::allocate2Dmemory<int>(size,size);
+   
+   //we ran all pairs shortest path algorithm with inverted edge weights to obtain the SHORTEST PATH for each pair
+   //Note that, we are interested in the path itself, not the shortest distance. 
+   //This is why we ignore the content of the connectivity matrix array
+   bool invertEdgeWeights=true;
+   Graph::calculateAllPairsShortestPath(Edge::STRUCTURAL_CONNECTIVITY,connectivityMatrix,predecessorMatrix,invertEdgeWeights);
+
+   //now, initialize the connectivity matrix with the direct edge weights.
+   initializeWeightedConnectivityMatrixFromEdgeFeatures(Edge::STRUCTURAL_CONNECTIVITY,connectivityMatrix);
+   vector<float> nodeStrengths;
+   initializeNodeStrengthVectorFromEdgeFeatures(Edge::STRUCTURAL_CONNECTIVITY,nodeStrengths);
+   
+   //initialize pathTransitivityMatrix with 0s, since we will use it to store the summation of matching indexes
+   Utility::fillMatrix<float>(pathTransitivityMatrix,0.0,size,size);
+   
+   //NOTE: that we are assuming that the graph is connected. Otherwise, the while loop below will never terminate.
+   for(int i=0;i<size;i++)
+      for(int j=0;j<size;j++)
+      {
+         int tail=j;
+         int pathLength=1;
+         while(tail!=i)
+         {
+            //path is as follows: i, .. , head, tail,..,j
+            //initially tail=j, head is always the node that leads to the tail with a direct connection (edge)
+            //at the end of this loop, head will become i. This will be the last iteration of the loop.
+            int head = predecessorMatrix[i][tail];
+            
+            //calculate matching index for the node pair (previous,end)
+            float matchingIndexNominator = 0;
+            float matchingIndexDenominator1 = 0,matchingIndexDenominator2 = 0;
+            for(int k=0;k<size;k++)
+            {
+               if(k!=tail)
+                  matchingIndexDenominator1 += connectivityMatrix[head][k];
+               if(k!=head)
+                  matchingIndexDenominator2 += connectivityMatrix[k][tail];
+               
+               if(k==tail || k==head)
+                  continue;
+               
+               if(connectivityMatrix[head][k]>Utility::EPSILON && connectivityMatrix[k][tail]>Utility::EPSILON)
+                  matchingIndexNominator += connectivityMatrix[head][k] + connectivityMatrix[k][tail];
+            }
+            float matchingIndex = matchingIndexNominator / (matchingIndexDenominator1+matchingIndexDenominator2);
+            
+            pathTransitivityMatrix[i][j] += matchingIndex;
+            tail = head;
+            pathLength++;
+         }
+         pathTransitivityMatrix[i][j] = 2.0*pathTransitivityMatrix[i][j]/(float)(pathLength*(pathLength-1));
+      }
+   
+   Utility::free2Dmemory<float>(connectivityMatrix,size);
+   Utility::free2Dmemory<int>(predecessorMatrix,size);
+}
+//</editor-fold>
+
+//</editor-fold>
+
+// <editor-fold defaultstate="collapsed" desc=" initialize node features / initialize edge features (including calculatePath function)" >
+
+// <editor-fold defaultstate="collapsed" desc=" initialize node features: initializeStructuralNodeStrength(), initializeFunctionalNodeStrength(), initializeFunctionalTimeSeries() " >
+void Graph::initializeNodeFeatures(float** structuralConnectivity, float** functionalConnectivity, int numNodes)
+{
+   //now insert null nodes, starting from nodeId=0
+   nodes.clear();
+   nodes.reserve(numNodes);
+   for(int i=0;i<numNodes;i++)
+   {
+      Node node(i,numFeatures,numExtraFeatures);
+      nodes.push_back(node);
+   }
+   ///////initialize node features : you can add a (float) threshold value for both structural and functional node features
+   initializeStructuralNodeFeatures(structuralConnectivity);//strength/degree of incoming and outgoing edges are added as a feature to each node (feature 1-2)
+   initializeFunctionalNodeFeatures(functionalConnectivity);//strength/degree of the functional correlation between regions are added as a feature to each node (feature 3-6)
+}
+
+//this function calculates the strength and degree of structural connectivity for a node
+//it takes the connectivity matrix and calculates the node degree and strength accordingly.
+//it also takes a threshold value which is set to zero by default. If provided with a threshold,
+//connectivity values less than the threshold is discarded.
+void Graph::initializeStructuralNodeFeatures(float **adjacencyMatrix, float threshold)
+{
+   int numNodes = nodes.size();
+   vector<float> connectivity(numNodes,0);
+   vector<int> degree(numNodes,0);
+   
+   for(int i=0;i<numNodes;i++)
+   {
+      for(int j=0;j<numNodes;j++)
+      {
+         if(i==j)
+            continue;
+         
+         float undirectedSum = (adjacencyMatrix[i][j] + adjacencyMatrix[j][i])/2;
+         
+         if(undirectedSum > threshold)
+         {
+            connectivity[i] += undirectedSum;
+            degree[i]++;
+         }
+      }
+   }
+   
+   for(int i=0;i<numNodes;i++)
+   {
+      nodes[i].setFeature(Node::STR_NODE_STRENGTH,connectivity[i]);
+      nodes[i].setFeature(Node::STR_NODE_DEGREE,degree[i]);
+   }
+}
+
+//this function calculates the positive and negative strength and degree of functional connectivity for a node
+//it takes the connectivity matrix and calculates the node degree and strength accordingly.
+//it also takes a threshold value which is set to zero by default. If provided with a threshold,
+//connectivity values in absolute value less than the threshold is discarded.
+void Graph::initializeFunctionalNodeFeatures(float **adjacencyMatrix, float threshold)
+{
+   int numNodes = nodes.size();
+   vector<float> functionalNodeStrengthPos(numNodes,0),functionalNodeStrengthNeg(numNodes,0);
+   vector<int> functionalNodeDegreePos(numNodes,0),functionalNodeDegreeNeg(numNodes,0);
+   
+   for(int i=0;i<numNodes;i++)
+   {
+      for(int j=0;j<numNodes;j++)
+      {
+         if(Utility::absoluteValue(adjacencyMatrix[i][j])<threshold || i==j)
+            continue;
+         else if(adjacencyMatrix[i][j]>0)
+         {
+            functionalNodeStrengthPos[i] += adjacencyMatrix[i][j];
+            functionalNodeDegreePos[i]++;
+         }
+         else if(adjacencyMatrix[i][j]<0)
+         {
+            functionalNodeStrengthNeg[i] += adjacencyMatrix[i][j];
+            functionalNodeDegreeNeg[i]++;
+         }
+      }
+   }
+   
+   for(int i=0;i<numNodes;i++)
+   {
+      nodes[i].setFeature(Node::FUNC_NODE_STRENGTH_POS,functionalNodeStrengthPos[i]);
+      nodes[i].setFeature(Node::FUNC_NODE_DEGREE_POS,functionalNodeDegreePos[i]);
+      nodes[i].setFeature(Node::FUNC_NODE_STRENGTH_NEG,functionalNodeStrengthNeg[i]);
+      nodes[i].setFeature(Node::FUNC_NODE_DEGREE_NEG,functionalNodeDegreeNeg[i]);
+   }
+}
+
+//this function initializes the node features that are calculated by brain connectivity toolbox and load it to the node
+void Graph::initializeExtraNodeFeatures(float **featuresMatrix)
+{
+	int numNodes = nodes.size();
+	int extraFeatureIndex=nodes[0].getIndexOfExtraFeatures();
+
+	for(int i=0;i<numNodes;i++)
+	{
+		for(int j=0;j<numExtraFeatures;j++)
+		{
+			nodes[i].setFeature(extraFeatureIndex+j,featuresMatrix[i][j]);
+		}
+	}
+}
+//</editor-fold>
+
+// <editor-fold defaultstate="collapsed" desc=" initialize edge features: calculatePath(), initializeEdgeFeatures(), initializeEdgeFeaturesWith<StrongestSumPath(),StrongestPath(),ShortestPath(),Communicability(),SearchInformation(),PathTransitivity()> " >
+void Graph::initializeEdgeFeatures(float** structuralConnectivityMatrix, float** functionalConnectivityMatrix)
+{
+   int numNodes = nodes.size();
+   edges.clear();
+   edges.reserve(numNodes*(numNodes-1)/2);
+   int edgeId=0;//we start counting edges from 0
+   for(int i=0;i<numNodes;i++)
+   {
+      for(int j=i;j<numNodes;j++)
+      {
+         if(i==j)
+            continue;
+
+         //Euclidean distance between the CoM of the two regions
+         float spatialDistance = nodes[i].calculateDistance(nodes[j]);
+         //averaged and log scaled streamline count is taken as the structural connectivity measure
+         float structuralConnectivity = structuralConnectivityMatrix[i][j];
+         //Functional correlation value that is obtained by the fMRI data is recorded as another feature of the edge.
+         //Initially functional correlation will have values in [-1,+1] range. 
+         //We will first expand it with Fisher's Z transform to ~[-3,3] interval 
+         float functionalConnectivity = functionalConnectivityMatrix[i][j];
+         
+         edges.push_back(Edge(edgeId++,i,j,spatialDistance,structuralConnectivity,functionalConnectivity));
+         //edges.push_back(Edge(edgeId++,j,i,spatialDistance,structuralConnectivity,functionalConnectivity));//we discarded the reverse edges
+      }
+   }
+}
+
+void Graph::calculatePath(std::string pathType, int maxPathLength)
+{
+   if(pathType.compare("direct")==0)
+      initializeEdgeFeaturesWithDirectEdges(Edge::STRUCTURAL_CONNECTIVITY);
+   else if(pathType.compare("wShortest")==0)
+      initializeEdgeFeaturesWithWeightedShortestPath(Edge::STRUCTURAL_CONNECTIVITY);
+   else if(pathType.compare("uShortest")==0)
+      initializeEdgeFeaturesWithUnweightedShortestPath(Edge::STRUCTURAL_CONNECTIVITY);
+   else if(pathType.compare("wCommunicability")==0)
+      initializeEdgeFeaturesWithWeightedCommunicabilityPath(Edge::STRUCTURAL_CONNECTIVITY,maxPathLength);
+   else if(pathType.compare("uCommunicability")==0)
+      initializeEdgeFeaturesWithUnweightedCommunicabilityPath(Edge::STRUCTURAL_CONNECTIVITY,maxPathLength);
+   else if(pathType.compare("searchInformation")==0)
+      initializeEdgeFeaturesWithSearchInformation(Edge::STRUCTURAL_CONNECTIVITY);
+   else if(pathType.compare("pathTransitivity")==0)
+      initializeEdgeFeaturesWithPathTransitivity(Edge::STRUCTURAL_CONNECTIVITY);
+}
+
+//This function initializes the edges of the graph based on the strength of the edges
+//It makes sense to use this function iff you want to scale the edge weights of the direct connections
+//otherwise, there is no point of using this function
+void Graph::initializeEdgeFeaturesWithDirectEdges(Edge::Feature featureType)
+{
+   int numNodes = nodes.size();
+   
+   float **connectivityMatrix = Utility::allocate2Dmemory<float>(numNodes,numNodes);     // direct connections among nodes
+   initializeWeightedConnectivityMatrixFromEdgeFeatures(featureType,connectivityMatrix);
+   
+   for(vector<Edge>::iterator iter=edges.begin();iter!=edges.end();iter++)
+   {
+      int node1 = iter->getNode1Id();
+      int node2 = iter->getNode2Id();
+      iter->setFeature(featureType,connectivityMatrix[node1][node2]);
+   }
+
+   Utility::free2Dmemory(connectivityMatrix,numNodes);
+}
+
+//This function initializes the edges of the graph based on the strength of the edges
+//First we invert the edges, then find the all pairs shortest path, 
+//then traverse the predecessor matrix for the shortest path
+//and sum up the strength(weight) of the encountered edges across the shortest path
+//and finally set the weight(strength) of the edge with this sum value
+void Graph::initializeEdgeFeaturesWithStrongestSumPath(Edge::Feature featureType)
+{
+   int numNodes = nodes.size();
+   
+   float **distanceMatrix = Utility::allocate2Dmemory<float>(numNodes,numNodes);     // all pairs shortest distances among nodes
+   int **predecessorMatrix = Utility::allocate2Dmemory<int>(numNodes,numNodes);
+
+   bool invertEdges=true;
+   calculateAllPairsShortestPath(featureType,distanceMatrix,predecessorMatrix,invertEdges);//initializes distance matrix with non-static shortest path function
+   
+   //we will use direct edges between the nodes for calculating total strength of the path between pairs
+   initializeWeightedConnectivityMatrixFromEdgeFeatures(featureType,distanceMatrix);
+
+   for(vector<Edge>::iterator iter=edges.begin();iter!=edges.end();iter++)
+   {
+      int node1 = iter->getNode1Id();
+      int node2 = iter->getNode2Id();
+      
+      int intermediateNode2 = node2;
+      int intermediateNode1 = predecessorMatrix[node1][intermediateNode2];
+      
+      float distance = 0;
+      while(true)
+      {
+         distance += distanceMatrix[intermediateNode1][intermediateNode2];
+
+         if(intermediateNode1==node1)
+            break;
+         else
+         {
+            intermediateNode2 = intermediateNode1;
+            intermediateNode1 = predecessorMatrix[node1][intermediateNode2];
+         }
+      }
+      
+      iter->setFeature(featureType,distance);
+   }
+
+   Utility::free2Dmemory(distanceMatrix,numNodes);
+   Utility::free2Dmemory(predecessorMatrix,numNodes);
+}
+
+
+//This function initializes the edges of the graph based on the strength of the edges
+//First we invert the edges, then find the all pairs shortest path, 
+//and finally set the weight(strength) of the edge with the inverse of the calculated shortest path
+void Graph::initializeEdgeFeaturesWithWeightedShortestPath(Edge::Feature featureType)
+{
+   int numNodes = nodes.size();
+   
+   float **connectivityMatrix = Utility::allocate2Dmemory<float>(numNodes,numNodes);     // all pairs shortest distances among nodes
+
+   bool invertEdges=true;
+   calculateAllPairsShortestPath(featureType,connectivityMatrix,invertEdges);//initializes distance matrix by calling non-static shortest path function
+   
+   for(vector<Edge>::iterator iter=edges.begin();iter!=edges.end();iter++)
+   {
+      int node1 = iter->getNode1Id();
+      int node2 = iter->getNode2Id();
+      iter->setFeature(featureType,connectivityMatrix[node1][node2]);
+   }
+   
+   Utility::free2Dmemory(connectivityMatrix,numNodes);
+}
+
+//This function calculates the shortest path between pairs of nodes based on the number of hops between pairs
+//and then set the weight(strength) of the edge with the the calculated shortest path
+void Graph::initializeEdgeFeaturesWithUnweightedShortestPath(Edge::Feature featureType)
+{
+   int numNodes = nodes.size();
+   
+   float **distanceMatrix = Utility::allocate2Dmemory<float>(numNodes,numNodes);     // all pairs shortest distances among nodes
+   initializeBinaryConnectivityMatrixFromEdgeFeatures(featureType,distanceMatrix);
+   Utility::replaceValueOfMatrix<float>(distanceMatrix,0.0,Geometry::INF,numNodes,numNodes);
+
+   bool invertEdges=false;
+   calculateAllPairsShortestPath(distanceMatrix,numNodes,invertEdges);//initializes distance matrix by calling static shortest path function
+   
+   //our connectome metrics (direct, strongest, communicability) get higher values between pairs that are strongly correlated
+   //on the contrary, unweighted shortest path gets larger values for unrelated pairs of regions
+   //for the sake of being consistent, here, we subtract the shortest path from the largest distance plus one
+   //+1 comes from the fact that, if we were to subtract it from largest distance, some of the distances between pairs would be
+   //zero, which shouldn't be the case for distinct regions of the brain.
+   float maxValue = Utility::getMaxValueOfMatrixExceptDiagonal(distanceMatrix,numNodes);
+   Utility::subtractMatrixFromScalarExceptDiagonal(distanceMatrix,maxValue+1,numNodes);
+      
+   for(vector<Edge>::iterator iter=edges.begin();iter!=edges.end();iter++)
+   {
+      int node1 = iter->getNode1Id();
+      int node2 = iter->getNode2Id();
+      iter->setFeature(featureType,distanceMatrix[node1][node2]);
+   }
+
+   Utility::free2Dmemory(distanceMatrix,numNodes);
+}
+
+//This function initializes the edges of the graph based on the strength of the edges
+//Find the all pairs shortest path (without inverting the edge weights), 
+//and then set the weight(strength) of the edge with the the calculated shortest path
+void Graph::initializeEdgeFeaturesWithWeightedCommunicabilityPath(Edge::Feature featureType, int maxPathLength)
+{
+   int numNodes = nodes.size();
+   
+   float **connectivityMatrix = Utility::allocate2Dmemory<float>(numNodes,numNodes);     // direct connections among nodes
+   vector<float> nodeStrengths; // degrees of nodes stored in the diagonal
+   initializeWeightedConnectivityMatrixFromEdgeFeatures(featureType,connectivityMatrix);
+   initializeNodeStrengthVectorFromEdgeFeatures(featureType,nodeStrengths);
+
+   calculateWeightedCommunicability(connectivityMatrix,nodeStrengths,numNodes,maxPathLength);
+   
+   for(vector<Edge>::iterator iter=edges.begin();iter!=edges.end();iter++)
+   {
+      int node1 = iter->getNode1Id();
+      int node2 = iter->getNode2Id();
+      iter->setFeature(featureType,connectivityMatrix[node1][node2]);
+   }
+
+   Utility::free2Dmemory(connectivityMatrix,numNodes);
+}
+
+//This function initializes the edges of the graph based on the strength of the edges
+//Find the all pairs shortest path (without inverting the edge weights), 
+//and then set the weight(strength) of the edge with the the calculated shortest path
+void Graph::initializeEdgeFeaturesWithUnweightedCommunicabilityPath(Edge::Feature featureType, int maxPathLength)
+{
+   int numNodes = nodes.size();
+   
+   float **connectivityMatrix = Utility::allocate2Dmemory<float>(numNodes,numNodes);     // direct connections among nodes
+   initializeWeightedConnectivityMatrixFromEdgeFeatures(featureType,connectivityMatrix);
+
+   calculateUnweightedCommunicability(connectivityMatrix,numNodes,maxPathLength);
+   
+   for(vector<Edge>::iterator iter=edges.begin();iter!=edges.end();iter++)
+   {
+      int node1 = iter->getNode1Id();
+      int node2 = iter->getNode2Id();
+      iter->setFeature(featureType,connectivityMatrix[node1][node2]);
+   }
+
+   Utility::free2Dmemory(connectivityMatrix,numNodes);
+}
+
+//This function initializes the edges of the graph based on the "search information" of the shortest path between pairs of nodes
+//Find the all pairs shortest path (with inverting the edge weights), 
+//and then set the weight(strength) of the edge with the "search information" of the weighted shortest path
+void Graph::initializeEdgeFeaturesWithSearchInformation(Edge::Feature featureType)
+{
+   int numNodes = nodes.size();
+   float **searchInformationMatrix = Utility::allocate2Dmemory<float>(numNodes,numNodes);     // direct connections among nodes
+   
+   calculateSearchInformation(searchInformationMatrix,numNodes);
+   
+   for(vector<Edge>::iterator iter=edges.begin();iter!=edges.end();iter++)
+   {
+      int node1 = iter->getNode1Id();
+      int node2 = iter->getNode2Id();
+      iter->setFeature(featureType,searchInformationMatrix[node1][node2]);
+   }
+
+   Utility::free2Dmemory(searchInformationMatrix,numNodes);
+}
+
+//This function initializes the edges of the graph based on the "path transitivity" of the shortest path between pairs of nodes
+//Find the all pairs shortest path (with inverting the edge weights), 
+//and then set the weight(strength) of the edge with the "path transitivity" of the weighted shortest path
+void Graph::initializeEdgeFeaturesWithPathTransitivity(Edge::Feature featureType)
+{
+   int numNodes = nodes.size();
+   float **pathTransitivityMatrix = Utility::allocate2Dmemory<float>(numNodes,numNodes);     // direct connections among nodes
+   
+   calculatePathTransitivity(pathTransitivityMatrix,numNodes);
+   
+   for(vector<Edge>::iterator iter=edges.begin();iter!=edges.end();iter++)
+   {
+      int node1 = iter->getNode1Id();
+      int node2 = iter->getNode2Id();
+      iter->setFeature(featureType,pathTransitivityMatrix[node1][node2]);
+   }
+
+   Utility::free2Dmemory(pathTransitivityMatrix,numNodes);
+}
+
+//</editor-fold>
+
+//</editor-fold>
+
+// <editor-fold defaultstate="collapsed" desc=" graph shufflers:shuffleStructuralConnectivityPreservingStructuralNodeDegree(),shuffleStructuralConnectivityPreservingStructuralNodeStrength() " >
+
+//given a graph, this function shuffles the edges of structural connectome while preserving node degree.
+//Main idea is to randomly pick two edges and cross the connections between the four endpoints.
+//The code is adapted from the matlab code of randmio_und.m which is explained below.
+//from: Maslov and Sneppen, Specificity and Stability in Topology of Protein Networks, 2002, Science 
+// A convenient numerical algorithm  performing  such  randomization  consists  of  first  randomly  selecting  a  pair  of
+// directed  edges  A->B  and  C->D.  The  two edges are then rewired in such a way that A becomes connected to D, while C connects to B.
+// However, in case one or both of these new links already exist in the network, this step is aborted and a new pair of edges is selected.
+// This  last  restriction  prevents  the  appearance of multiple edges connecting the same pair of nodes.  A  repeated  application  of  the  above
+// rewiring  step  leads  to  a  randomized  version of the original network. 
+void Graph::shuffleStructuralConnectivityPreservingStructuralNodeDegree(int seedSupplement, int iterationBound)
+{
+   srand((int)clock()+seedSupplement); //initialize the random number generator
+   int numNodes = nodes.size();
+   
+   //ORIGINAL NODE FEATURES are stored for measuring how good we shuffled the graph (for DEBUG purposes)
+   vector<float> originalNodeDegrees(numNodes,0),originalNodeStrengths(numNodes,0);
+   for(vector<Node>::iterator iter=nodes.begin();iter!=nodes.end();iter++)
+   {
+      originalNodeDegrees[iter->getNodeId()]=iter->getFeature(Node::STR_NODE_DEGREE);
+      originalNodeStrengths[iter->getNodeId()]=iter->getFeature(Node::STR_NODE_STRENGTH);
+   }
+   
+   //FUNCTIONAL CONNECTIVITY matrix
+   float **functionalConnectivityMatrix = Utility::allocate2Dmemory<float>(numNodes,numNodes);
+   initializeWeightedConnectivityMatrixFromEdgeFeatures(Edge::FUNCTIONAL_CONNECTIVITY,functionalConnectivityMatrix);
+   
+   //STRUCTURAL CONNECTIVITY matrix
+   vector<int> edgeIds;//keep the IDs of nonzero structural edges
+   
+   float **structuralConnectivityMatrix = Utility::allocate2Dmemory<float>(numNodes,numNodes);
+   Utility::fillMatrix<float>(structuralConnectivityMatrix,0,numNodes,numNodes);
+   
+	//fill in the distance matrix with existing edges, put min of edges if we have multiple edges between two same nodes
+   for(vector<Edge>::iterator iter=edges.begin();iter!=edges.end();iter++)
+	{
+      int node1Index = iter->getNode1Id();
+      int node2Index = iter->getNode2Id();
+      float edgeWeight = iter->getFeature(Edge::STRUCTURAL_CONNECTIVITY);
+      
+      if(edgeWeight > Utility::EPSILON)
+      {
+         edgeIds.push_back(iter->getEdgeId());
+      
+         if(structuralConnectivityMatrix[node1Index][node2Index] < Utility::EPSILON)
+            structuralConnectivityMatrix[node1Index][node2Index] = edgeWeight;
+         else if(structuralConnectivityMatrix[node1Index][node2Index] > edgeWeight)
+            structuralConnectivityMatrix[node1Index][node2Index] = edgeWeight;
+
+         structuralConnectivityMatrix[node2Index][node1Index] = structuralConnectivityMatrix[node1Index][node2Index];//since the graph is undirected, we need to inverse the edges for all pairs shortest path calculation
+      }
+	}
+
+   //keep num of nonzero undirected structural edges
+   int numEdges = edgeIds.size();
+   
+   //SHUFFLE the graph
+   int successfulRewirings = 0;
+   int maxAttempts = (numNodes*numEdges)/(numNodes*(numNodes-1));//maximal number of rewiring attempts per iteration
+   
+   for(int iterationCount=0;iterationCount<iterationBound*numEdges;iterationCount++)
+   {
+      int attempt = 0;
+      while(attempt < maxAttempts)
+      {
+         int edge1Id, edge2Id;
+         int a,b,c,d;
+         //pick four distinct nodes, that are connected in pairs
+         while(true)
+         {
+            edge1Id = edgeIds[rand()%numEdges];
+            edge2Id = edgeIds[rand()%numEdges];
+            while(edge1Id==edge2Id)
+               edge2Id = edgeIds[rand()%numEdges];
+            
+            a = edges[edge1Id].getNode1Id();
+            b = edges[edge1Id].getNode2Id();
+            c = edges[edge2Id].getNode1Id();
+            d = edges[edge2Id].getNode2Id();
+
+            if(a!=c && a!=d && b!=c && b!=d)
+               break;
+         }
+                  
+         if(rand()%2 > 0)
+         {
+            int temp = c;
+            c = d;
+            d = temp;
+         }
+         
+         //check if nodes are paired as (a,b) and (c,d) but no other edge exists between them (i.e., no edge between b,c and a,d)
+         if(structuralConnectivityMatrix[a][d]<Utility::EPSILON && structuralConnectivityMatrix[c][b]<Utility::EPSILON)
+         {
+            structuralConnectivityMatrix[a][d] = structuralConnectivityMatrix[a][b];structuralConnectivityMatrix[a][b]=0;
+            structuralConnectivityMatrix[d][a] = structuralConnectivityMatrix[b][a];structuralConnectivityMatrix[b][a]=0;
+            structuralConnectivityMatrix[c][b] = structuralConnectivityMatrix[c][d];structuralConnectivityMatrix[c][d]=0;
+            structuralConnectivityMatrix[b][c] = structuralConnectivityMatrix[d][c];structuralConnectivityMatrix[d][c]=0;
+            
+            //swap edges 
+            //NOTE: since we will reinitialize the edges from scratch below, we do not update the edge weights here
+            //      the edges are being used as a scratch pad here.
+            edges[edge1Id].setNodeIds(a,d);
+            edges[edge2Id].setNodeIds(c,b);
+            
+            successfulRewirings++;
+            break;
+         }
+         attempt++;
+      }
+   }
+//   cout<<successfulRewirings<<endl;
+   
+   //INITIALIZE the node and edge features from scratch. We first erase the previous nodes/edges and then regenerate them 
+   //according to the new structural connectivity matrix
+   initializeNodeFeatures(structuralConnectivityMatrix,functionalConnectivityMatrix,numNodes);
+   initializeEdgeFeatures(structuralConnectivityMatrix,functionalConnectivityMatrix);
+
+   //now, check how good we performed in terms of shuffling (for DEBUG purposes)
+//   for(vector<Node>::iterator iter=nodes.begin();iter!=nodes.end();iter++)
+//   {
+//      int nodeId = iter->getNodeId();
+//      cout<<nodeId<<"\t degree:("<<originalNodeDegrees[nodeId]<<","<<iter->getFeature(Node::STR_NODE_DEGREE)<<")"
+//         <<"\t strength:("<<originalNodeStrengths[nodeId]<<","<<iter->getFeature(Node::STR_NODE_STRENGTH)<<")\n";
+//   }
+   
+   Utility::free2Dmemory<float>(structuralConnectivityMatrix,numNodes);
+   Utility::free2Dmemory<float>(functionalConnectivityMatrix,numNodes);
+}
+
+//given a graph, this function shuffles the edges of the graph while preserving the strength of each node.
+//main idea is to randomly generate fibers of weight 1 and put them between pairs of nodes, reducing 
+//strength after each iteration. In the end, node degree distribution becomes pretty homogeneous although node strengths are preserved
+void Graph::shuffleStructuralConnectivityPreservingStructuralNodeStrength(int seedSupplement)
+{
+   srand((int)clock()+seedSupplement);
+   
+   int numNodes = nodes.size();
+   
+   float **connectivityMatrix = Utility::allocate2Dmemory<float>(numNodes,numNodes);
+   Utility::fillMatrix<float>(connectivityMatrix,0.0,numNodes,numNodes);
+   
+   vector<float> values, valuesOrig;
+   vector<int> incompleteNodes;
+   values.reserve(numNodes);
+   incompleteNodes.reserve(numNodes);
+   
+   float accuracyThreshold = 1.0;
+   
+   //first reset the edge weights
+   for(vector<Edge>::iterator iter=edges.begin();iter!=edges.end();iter++)
+      iter->setFeature(Edge::STRUCTURAL_CONNECTIVITY,0);
+   
+   //initialize node strength values which will be counted down
+   //and also initialize nodes that has nonzero node strength
+   for(vector<Node>::iterator iter=nodes.begin();iter!=nodes.end();iter++)
+   {
+      values.push_back(iter->getFeature(Node::STR_NODE_STRENGTH));
+      incompleteNodes.push_back(iter->getNodeId());
+   }
+   
+   //valuesOrig = values;//use for statistics calculations
+   
+   //continue the loop until we have more than one node that still has nonzero node strength
+   while(incompleteNodes.size()>1)
+   {
+      //randomly select a node
+      //NOTE: One of the nodes should be selected among the nodes that has the highest strength
+      //However, strictly following this approach will result in low strength nodes to get assigned to 
+      //few number of nodes (low degree). Instead, we roll a coin and either randomly pick the
+      //first node or pick the node with largest node strength. This produces a much better node degree
+      //distribution while preserving the node strength for each node at the shuffled graph
+      int coin = rand()%2;
+      int node1 = (coin == 0 ? Utility::returnIndexOfMaxElement(values) : incompleteNodes[rand()%incompleteNodes.size()]);
+      
+      //second node is always picked randomly
+      int node2 = incompleteNodes[rand()%incompleteNodes.size()];
+      while(node1==node2)//make sure that the second node that we picked is different than the first
+         node2 = incompleteNodes[rand()%incompleteNodes.size()];
+      
+      //add a unit edge between the two randomly picked nodes and reduce the node strength from the initial counter
+      connectivityMatrix[node1][node2] += accuracyThreshold;
+      connectivityMatrix[node2][node1] += accuracyThreshold;
+      values[node1]-=accuracyThreshold;
+      values[node2]-=accuracyThreshold;
+      
+      //remove the nodes from the list if we have inserted enough of unit edges for the node to preserve its strength
+      if(values[node1]<Utility::EPSILON)
+         Utility::removeElementWithValueFromVector(incompleteNodes,node1);
+      
+      if(values[node2]<Utility::EPSILON)
+         Utility::removeElementWithValueFromVector(incompleteNodes,node2);
+   }
+   
+   //Utility::saveMatrixToFile("mat.csv",connectivityMatrix,numNodes,numNodes);//DEBUG: save new connectivity matrix
+   //Utility::logScaleMatrix(connectivityMatrix,numNodes,numNodes);
+   
+   //reinitialize node features from resulting new connectivity matrix
+   initializeStructuralNodeFeatures(connectivityMatrix);
+   
+////to set the streamline counts as a measure of existing paths between pairs of nodes, 
+//   //set isShortestPath to become true.
+//   //to use only the direct fibers between pairs as a measure of structural correlation, set it to false.
+//   bool isShortestPath=true;
+//   
+//   if(isShortestPath==true)
+//   {
+//      float **shortestPath = Utility::allocate2Dmemory<float>(numNodes,numNodes);
+//      Utility::copyMatrix(streamlineMatrix,shortestPath,numNodes,numNodes);
+//      Utility::multiplicativeInverseMatrix(shortestPath,numNodes,numNodes);
+//      calculateAllPairsShortestPath(shortestPath,numNodes);
+//      Utility::multiplicativeInverseMatrix(shortestPath,numNodes,numNodes);
+//      //calculateAllPairsShortestPath(Edge::STRUCTURAL_CONNECTIVITY,shortestPath);
+//
+//      initializeEdgeFeatures(shortestPath,functionalMatrix);
+//      Utility::free2Dmemory<float>(shortestPath,numNodes);
+//   }
+      
+   //reinitialize edge features from resulting new connectivity matrix
+   int count=0;
+   for(int i=0;i<numNodes;i++)
+   {
+      for(int j=i;j<numNodes;j++)
+      {
+         if(i==j)
+            continue;
+         edges[count].setFeature(Edge::STRUCTURAL_CONNECTIVITY,connectivityMatrix[i][j]);
+         count++;
+      }
+   }
+   
+//   //now, calculate the statistics on whether we were able to preserve the nodeFeature per node
+//   values.clear();
+//   values.reserve(numNodes);
+//   for(vector<Node>::iterator iter=nodes.begin();iter!=nodes.end();iter++)
+//      values.push_back(iter->getFeature(nodeFeature));
+//   
+//   cout.precision(6);
+//   float totalDeviation=0,totalSum=0;
+//   for(int i=0;i<numNodes;i++)
+//   {
+//      totalDeviation+=valuesOrig[i]-values[i];
+//      totalSum+=valuesOrig[i];
+//   }
+//   
+//   cout<<"Total Sum:"<<totalSum<<"\t Total Deviation:"<<totalDeviation<<endl;
+   
+   Utility::free2Dmemory(connectivityMatrix,numNodes);
+}
+
+//given a graph, this function shuffles the edges of functional connectome while preserving signed node degree distribution.
+//Main idea is to randomly pick two edges and cross the connections between the four endpoints.
+//The code is adapted from the matlab code of randmio_und_signed.m which is explained below.
+//from: Maslov and Sneppen, Specificity and Stability in Topology of Protein Networks, 2002, Science 
+// A convenient numerical algorithm  performing  such  randomization  consists  of  first  randomly  selecting  a  pair  of
+// directed  edges  A->B  and  C->D.  The  two edges are then rewired in such a way that A becomes connected to D, while C connects to B.
+// However, in case one or both of these new links already exist in the network, this step is aborted and a new pair of edges is selected.
+// This  last  restriction  prevents  the  appearance of multiple edges connecting the same pair of nodes.  A  repeated  application  of  the  above
+// rewiring  step  leads  to  a  randomized  version of the original network. 
+void Graph::shuffleFunctionalConnectivityPreservingSignedNodeDegree(int seedSupplement, int iterationBound)
+{
+   srand((int)clock()+seedSupplement); //initialize the random number generator
+   int numNodes = nodes.size();
+   int numEdges = edges.size();
+   
+   //ORIGINAL NODE FEATURES are stored for measuring how good we shuffled the graph (for DEBUG purposes)
+//   vector<float> originalNodeDegreesNeg(numNodes,0),originalNodeDegreesPos(numNodes,0);
+//   vector<float> originalNodeStrengthsNeg(numNodes,0),originalNodeStrengthsPos(numNodes,0);
+//   for(vector<Node>::iterator iter=nodes.begin();iter!=nodes.end();iter++)
+//   {
+//      int nodeId = iter->getNodeId();
+//      originalNodeDegreesNeg[nodeId]=iter->getFeature(Node::FUNC_NODE_DEGREE_NEG);
+//      originalNodeDegreesPos[nodeId]=iter->getFeature(Node::FUNC_NODE_DEGREE_POS);
+//      originalNodeStrengthsNeg[nodeId]=iter->getFeature(Node::FUNC_NODE_STRENGTH_NEG);
+//      originalNodeStrengthsPos[nodeId]=iter->getFeature(Node::FUNC_NODE_STRENGTH_POS);
+//   }
+   
+   //FUNCTIONAL CONNECTIVITY matrix
+   float **functionalConnectivityMatrix = Utility::allocate2Dmemory<float>(numNodes,numNodes);
+   initializeWeightedConnectivityMatrixFromEdgeFeatures(Edge::FUNCTIONAL_CONNECTIVITY,functionalConnectivityMatrix);
+   
+   //STRUCTURAL CONNECTIVITY matrix
+   float **structuralConnectivityMatrix = Utility::allocate2Dmemory<float>(numNodes,numNodes);
+   initializeWeightedConnectivityMatrixFromEdgeFeatures(Edge::STRUCTURAL_CONNECTIVITY,structuralConnectivityMatrix);
+
+   //SHUFFLE the graph
+   int successfulRewirings = 0;
+   int maxAttempts = numNodes/2;//maximal number of rewiring attempts per iteration
+   
+   for(int iterationCount=0;iterationCount<iterationBound*numEdges;iterationCount++)
+   {
+      int attempt = 0;
+      while(attempt < maxAttempts)
+      {
+         int a,b,c,d;
+         //pick four distinct nodes
+         while(true)
+         {
+            a = rand()%numNodes;
+            b = rand()%numNodes;
+            c = rand()%numNodes;
+            d = rand()%numNodes;
+
+            if(a!=c && a!=d && b!=c && b!=d)
+               break;
+         }
+         
+         float f0_ab = functionalConnectivityMatrix[a][b];
+         float f0_cd = functionalConnectivityMatrix[c][d];
+         float f0_ad = functionalConnectivityMatrix[a][d];
+         float f0_cb = functionalConnectivityMatrix[c][b];
+         if( (Utility::sign(f0_ab)==Utility::sign(f0_cd)) && (Utility::sign(f0_ad)==Utility::sign(f0_cb)) && 
+             (Utility::sign(f0_ab)!=Utility::sign(f0_ad)) )
+         {
+            functionalConnectivityMatrix[a][d] = f0_ab; functionalConnectivityMatrix[a][b]=f0_ad;
+            functionalConnectivityMatrix[d][a] = f0_ab; functionalConnectivityMatrix[b][a]=f0_ad;
+            functionalConnectivityMatrix[c][b] = f0_cd; functionalConnectivityMatrix[c][d]=f0_cb;
+            functionalConnectivityMatrix[b][c] = f0_cd; functionalConnectivityMatrix[d][c]=f0_cb;
+            
+            successfulRewirings++;
+            break;
+         }
+         attempt++;
+      }
+   }
+//   cout<<successfulRewirings<<endl;
+   
+   //INITIALIZE the node and edge features from scratch. We first erase the previous nodes/edges and then regenerate them 
+   //according to the new structural connectivity matrix
+   initializeNodeFeatures(structuralConnectivityMatrix,functionalConnectivityMatrix,numNodes);
+   initializeEdgeFeatures(structuralConnectivityMatrix,functionalConnectivityMatrix);
+
+   //now, check how good we performed in terms of shuffling (for DEBUG purposes)
+//   for(vector<Node>::iterator iter=nodes.begin();iter!=nodes.end();iter++)
+//   {
+//      int nodeId = iter->getNodeId();
+//      cout<<nodeId<<"\t degreeNeg:("<<originalNodeDegreesNeg[nodeId]<<","<<iter->getFeature(Node::FUNC_NODE_DEGREE_NEG)<<")"
+//         <<"\t degreePos:("<<originalNodeDegreesPos[nodeId]<<","<<iter->getFeature(Node::FUNC_NODE_DEGREE_POS)<<")"
+//         <<"\t strengthNeg:("<<originalNodeStrengthsNeg[nodeId]<<","<<iter->getFeature(Node::FUNC_NODE_STRENGTH_NEG)<<")"
+//         <<"\t strengthPos:("<<originalNodeStrengthsPos[nodeId]<<","<<iter->getFeature(Node::FUNC_NODE_STRENGTH_POS)<<")\n";
+//   }
+   
+   Utility::free2Dmemory<float>(structuralConnectivityMatrix,numNodes);
+   Utility::free2Dmemory<float>(functionalConnectivityMatrix,numNodes);
+}
+
+//</editor-fold>
+
+// <editor-fold defaultstate="collapsed" desc=" other functions:initializeWeightedConnectivityMatrixFromEdgeFeatures(),initializeBinaryConnectivityMatrixFromEdgeFeatures(), calculateDiameter(), calculateNumberOfConnectedComponents(), getValueOfMinEdge()" >
+
+//this function fills in the given @distanceMatrix with the weight of the direct edges present in the graph
+//where the edge features are determined by @featureType (this function is used in shufflers)
+void Graph::initializeWeightedConnectivityMatrixFromEdgeFeatures(Edge::Feature featureType, float** distanceMatrix)
+{
+    int numNodes = nodes.size();
+	
+    //if memory is not allocated for the matrices, give error message and exit
+    if(distanceMatrix==NULL)
+    {
+        cerr<<"initializeWeightedConnectivityMatrixFromEdgeFeatures is called with unallocated memory for the distanceMatrix!! Exiting...\n";
+        exit(1);
+    }
+     
+    //////INITIALIZE MATRICES//////////
+    Utility::fillMatrix<float>(distanceMatrix,0.0,numNodes,numNodes);
+      
+    //fill in the distance matrix with existing edges, put min of edges if we have multiple edges between two same nodes
+    for(vector<Edge>::iterator iter=edges.begin();iter!=edges.end();iter++)
+    {
+        int node1Index = iter->getNode1Id();
+        int node2Index = iter->getNode2Id();
+        float edgeWeight = iter->getFeature(featureType);
+
+        distanceMatrix[node1Index][node2Index] = edgeWeight;//(Utility::absoluteValue(distanceMatrix[node1Index][node2Index]) > Utility::absoluteValue(edgeWeight)) ? edgeWeight : distanceMatrix[node1Index][node2Index];
+        distanceMatrix[node2Index][node1Index] = distanceMatrix[node1Index][node2Index];//since the graph is undirected, we need to inverse the edges for all pairs shortest path calculation
+    }
+}
+
+//this function fills in the given @distanceMatrix with the direct edges present in the graph (0/1--binary values)
+//where the edge features are determined by @featureType (this function is used in shufflers)
+void Graph::initializeBinaryConnectivityMatrixFromEdgeFeatures(Edge::Feature featureType, float** distanceMatrix)
+{
+    int numNodes = nodes.size();
+	
+    //if memory is not allocated for the matrices, give error message and exit
+    if(distanceMatrix==NULL)
+    {
+        cerr<<"initializeBinaryConnectivityMatrixFromEdgeFeatures is called with unallocated memory for the distanceMatrix!! Exiting...\n";
+        exit(1);
+    }
+     
+    //////INITIALIZE MATRICES//////////
+    Utility::fillMatrix<float>(distanceMatrix,0.0,numNodes,numNodes);
+      
+    //fill in the distance matrix with existing edges, put min of edges if we have multiple edges between two same nodes
+    for(vector<Edge>::iterator iter=edges.begin();iter!=edges.end();iter++)
+    {
+        int node1Index = iter->getNode1Id();
+        int node2Index = iter->getNode2Id();
+        float edgeWeight = iter->getFeature(featureType);
+        if(Utility::absoluteValue(edgeWeight)>Utility::EPSILON)
+        {
+            distanceMatrix[node1Index][node2Index] = 1;
+            distanceMatrix[node2Index][node1Index] = 1;//since the graph is undirected, we need to inverse the edges for all pairs shortest path calculation
+        }
+    }
+}
+
+void Graph::initializeNodeStrengthVectorFromEdgeFeatures(Edge::Feature featureType, std::vector<float> &nodeStrengths)
+{
+    int numNodes = nodes.size();
+
+    //////INITIALIZE vector//////////
+    //initialize strengths vector to zero
+    nodeStrengths.clear();
+    nodeStrengths.reserve(numNodes);
+    for(int i=0;i<numNodes;i++)
+        nodeStrengths.push_back(0.0);
+      
+    //fill in the strengths vector with strength of direct edges
+    for(vector<Edge>::iterator iter=edges.begin();iter!=edges.end();iter++)
+    {
+        int node1Index = iter->getNode1Id();
+        int node2Index = iter->getNode2Id();
+        float edgeWeight = iter->getFeature(featureType);
+        if(Utility::absoluteValue(edgeWeight)>Utility::EPSILON)
+        {
+            nodeStrengths[node1Index] += edgeWeight;
+            nodeStrengths[node2Index] += edgeWeight;
+        }
+    }
+}
+
+void Graph::initializeNodeDegreeVector(Edge::Feature featureType, std::vector<int> &nodeDegrees)
+{
+    int numNodes = nodes.size();
+
+    //////INITIALIZE vector//////////
+    //initialize strengths vector to zero
+    nodeDegrees.clear();
+    nodeDegrees.reserve(numNodes);
+    for(int i=0;i<numNodes;i++)
+        nodeDegrees.push_back(0.0);
+      
+    //fill in the strengths vector with strength of direct edges
+    for(vector<Edge>::iterator iter=edges.begin();iter!=edges.end();iter++)
+    {
+        int node1Index = iter->getNode1Id();
+        int node2Index = iter->getNode2Id();
+        float edgeWeight = iter->getFeature(featureType);
+        if(Utility::absoluteValue(edgeWeight)>Utility::EPSILON)
+        {
+           nodeDegrees[node1Index] += 1;
+           nodeDegrees[node2Index] += 1;
+        }
+    }
+}
+
+//given that we have already calculated all pairs shortest path of a graph,
+//this function calculates the diameter of the graph, i.e., the distance between the furthest pair of nodes.
+float Graph::calculateDiameter(Edge::Feature featureType, float **distanceMatrix)
+{
+    int numNodes = nodes.size();
+	
+    if(numNodes == 1)
+    {
+        diameter = 0;
+        return diameter;
+    }
+   
+    if(distanceMatrix==NULL)
+    {
+        cerr<<"calculateDiameter() is called with unallocated memory for the distanceMatrix!!";
+        cerr<<"It should have been called after calling allPairsShortestPath with the distance matrix filled properly. Exiting...\n";
+        exit(1);
+    }
+   
+    //CALCULATE DIAMETER/////////////////////
+    diameter = 0;
+    int pt1 = 0;
+    int pt2 = 0;
+    for(int i=0;i<numNodes;i++)
+    {
+       for(int j=0;j<numNodes;j++)
+       {
+          if( distanceMatrix[i][j]>diameter && distanceMatrix[i][j] < Geometry::INF )
+          {
+             diameter = distanceMatrix[i][j];
+             pt1 = i;
+             pt2 = j;
+          }
+       }
+    }
+
+    //replace node labels with nodeIds
+    if(diameter < Geometry::INF)
+    {
+        pt1 = nodes[pt1].getNodeId();
+        pt2 = nodes[pt2].getNodeId();
+    }
+
+    return diameter;
+}
+
+
+bool Graph::doesIncludeIsolatedNode(Node::Feature feature)
+{
+   if(feature!=Node::STR_NODE_DEGREE && feature!=Node::FUNC_NODE_DEGREE_POS && feature!=Node::FUNC_NODE_DEGREE_NEG)
+   {
+      cerr<<"Graph::isConnected() is called for incorrect featureId:"<<feature<<endl;
+      cerr<<"It should have been called for structural node degree, or positive or negative functional node degree, which are "<<
+              Node::STR_NODE_DEGREE<<", "<<Node::FUNC_NODE_DEGREE_POS<<", or "<<Node::FUNC_NODE_DEGREE_NEG<<", respectively\n";
+      exit(1);
+   }
+   for(vector<Node>::iterator nodeIter=nodes.begin();nodeIter!=nodes.end();nodeIter++)
+      if(nodeIter->getFeature(feature)<=Utility::EPSILON)
+         return false;
+   return true;
+}
+
+void Graph::calculateNumberOfConnectedComponents(std::string connectivityType,vector<vector<int> > &connectedComponents)
+{
+   int numNodes=nodes.size();
+   int numComponents=0;
+   vector<bool> isVisited(numNodes,false);
+
+   float **connectivityMatrix=Utility::allocate2Dmemory<float>(numNodes,numNodes);
+   if(connectivityType.compare("structure")==0)
+      initializeWeightedConnectivityMatrixFromEdgeFeatures(Edge::STRUCTURAL_CONNECTIVITY,connectivityMatrix);
+   else if(connectivityType.compare("positiveFunction")==0)
+   {
+      initializeWeightedConnectivityMatrixFromEdgeFeatures(Edge::FUNCTIONAL_CONNECTIVITY,connectivityMatrix);
+      Utility::filterOutElementsOfMatrixLessThanThreshold<float>(connectivityMatrix,0.0,0.0,numNodes,numNodes);
+   }
+   else if(connectivityType.compare("negativeFunction")==0)
+   {
+      initializeWeightedConnectivityMatrixFromEdgeFeatures(Edge::FUNCTIONAL_CONNECTIVITY,connectivityMatrix);
+      Utility::filterOutElementsOfMatrixGreaterThanThreshold<float>(connectivityMatrix,0.0,0.0,numNodes,numNodes);
+      Utility::multiplyMatrixWithScalar<float>(connectivityMatrix,-1.0,numNodes,numNodes);
+   }
+   
+   stack<int> myStack;
+
+   while(true)
+   {
+      vector<int> component;
+      for(int i=0;i<numNodes;i++)
+      {
+         if(isVisited[i]==false)
+         {
+            myStack.push(i);
+            numComponents++;
+            break;
+         }
+      }
+      if(myStack.empty()==true)
+         break;
+      
+      while(myStack.empty()==false)
+      {
+         int node=myStack.top();
+         myStack.pop();
+
+         if(isVisited[node]==false)
+         {
+            isVisited[node]=true;
+            component.push_back(node);
+            for(int i=0;i<numNodes;i++)
+               if(connectivityMatrix[node][i]>Utility::EPSILON && isVisited[i]==false)
+                  myStack.push(i);
+         }           
+      }
+      connectedComponents.push_back(component);
+   }
+}
+
+//returns the minimum edge distance among the entire graph
+float Graph::getValueOfMinEdge(Edge::Feature featureType)
+{
+    float minDistance = edges[0].getFeature(featureType);
+    int numOfEdges = edges.size();
+
+    //find min edge distance
+    for(int i=1;i<numOfEdges;i++)
+    {
+        if(minDistance > edges[i].getFeature(featureType))
+            minDistance = edges[i].getFeature(featureType);
+    }
+
+    return minDistance;
+}
+
+//</editor-fold>
+//</editor-fold>
+
+// <editor-fold defaultstate="collapsed" desc=" Load/Save functions: saveGraph(), loadGraph()x3, loadHelperFunctions">
+
+void Graph::saveGraph(string filename)
+{
+   ofstream file;
+
+   file.open(filename.c_str());
+
+   file.setf(std::ios::fixed,std::ios::floatfield);
+   
+   file<<"# Number of Features: <numFeatures> <numExtraFeatures>\n";
+   file<<numFeatures<<" "<<numExtraFeatures<<endl;
+
+   file<<"# Nodes: <nodeId> <feature 1,2--structural node degree/strength> <feature 3,4,5,6--neg/pos functional node degree/strength> <extra features (listed below, empty line if there is no extra feature)>"<<endl;
+   for(int i=0;i<numExtraFeatures;i++)
+      file<<"<"<<extraFeatureNames[i]<<"> ";
+   file<<endl;
+   
+   file<<nodes.size()<<endl;
+   for(std::vector<Node>::iterator iter = nodes.begin();iter!=nodes.end();iter++)
+      iter->saveNode(file);
+
+   file<<"# Edges: <edgeId> <sourceNodeId> <targetNodeId> <spatialDistance> <structuralConnectivity> <functionalConnectivity>\n";
+   file<<edges.size()<<endl;
+   for(std::vector<Edge>::iterator iter = edges.begin();iter!=edges.end();iter++)
+      iter->saveEdge(file);
+
+   file.close();
+}
+
+void Graph::loadGraph(string fileName)
+{
+   std::ifstream file; 
+   istringstream is,iss; 
+   string line;  
+   int numNodes, numOfEdges;
+
+   file.open(fileName.c_str());
+   if(file.fail())
+   {
+     cout << "File not found!!!!   " << fileName << "\n";
+     return;
+   }	
+
+   //read num features
+   getline(file, line);	//ignore comment line
+   getline(file, line);
+   is.clear();
+   is.str(line);
+   is >> numFeatures >> numExtraFeatures;// >> dimensionTimeSeries;
+   
+   getline(file, line);	//ignore comment line
+   
+   //read extra feature names
+   extraFeatureNames.reserve(numExtraFeatures);
+   getline(file, line);
+   std::size_t start = line.find_first_of("<");
+   while (start!=std::string::npos)
+   {
+      std::size_t end = line.find_first_of(">",start+1);
+      string temp = line.substr(start+1,end-start-1);
+      extraFeatureNames.push_back(temp);
+      start=line.find_first_of("<",start+1);
+   }
+   
+   //read nodes
+   getline(file, line);
+   is.clear();
+   is.str(line);
+   is >> numNodes;
+   nodes.reserve(numNodes);
+   for(int i=0;i<numNodes;i++)
+   {
+     Node node(numFeatures,numExtraFeatures);
+     node.loadNode(file);
+     nodes.push_back(node);
+   }
+
+   //read edges
+   getline(file, line);	//ignore comment line
+   getline(file, line);
+   is.clear();
+   is.str(line);
+   is >> numOfEdges;
+   edges.reserve(numOfEdges);
+   for(int a=0;a<numOfEdges;a++)
+   {
+     Edge edge;
+     edge.loadEdge(file);
+     edges.push_back(edge);
+   }
+   fflush(stdout);
+
+   file.close();
+}
+
+void Graph::loadGraph(std::string streamlineFile, std::string fmriNetworkFile, std::string bctFeaturesFile)
+{
+    if(streamlineFile.compare("")==0 && fmriNetworkFile.compare("")==0)
+    {
+       cerr<<"Both streamlineFile and fmriNetworkFile paths are empty. At least one should be provided to loadGraph(). Exiting...\n";
+       exit(1);
+    }
+
+    int numNodes; 
+    if(streamlineFile.compare("")!=0)
+        numNodes= Utility::countRows(streamlineFile);
+    else if(fmriNetworkFile.compare("")!=0)
+        numNodes= Utility::countRows(fmriNetworkFile);
+
+    //allocate memory for adjacencyMatrix
+    float **streamlineMatrix = Utility::allocate2Dmemory<float>(numNodes,numNodes);
+    float **functionalMatrix = Utility::allocate2Dmemory<float>(numNodes,numNodes);
+
+    //read adjacencyMatrix from file   
+    if(streamlineFile.compare("")==0)
+        Utility::fillMatrix<float>(streamlineMatrix,0.0,numNodes,numNodes);
+    else
+    {
+        Utility::loadMatrixFromFile<float>(streamlineFile,streamlineMatrix,numNodes,numNodes);
+        //fill the diagonal entries of the streamline matrix with zero, just in case we have spurious self edges
+        Utility::fillDiagonalOfTheMatrix<float>(streamlineMatrix,0,numNodes);
+        //Average of the streamline counts for incoming and outgoing edges
+        Utility::symmetrizeMatrixByMean(streamlineMatrix,numNodes);
+    }
+
+    if(fmriNetworkFile.compare("")==0)
+        Utility::fillMatrix<float>(functionalMatrix,0.0,numNodes,numNodes);
+    else
+    {
+        Utility::loadMatrixFromFile<float>(fmriNetworkFile,functionalMatrix,numNodes,numNodes);
+        //fill the diagonal entries of the streamline matrix with zero, just in case we have spurious self edges
+        Utility::fillDiagonalOfTheMatrix<float>(functionalMatrix,0,numNodes);
+
+        //filter out correlations whose absolute value is larger than 0.999
+        //we do this to define an upper/lower limit for the values after Z transform
+        //that is, after Fisher's z transform, functional connectome will take values in [-3.8,3.8] interval
+        Utility::filterOutElementsOfMatrixGreaterThanThreshold<float>(functionalMatrix,FUNC_CORR_RANGE,FUNC_CORR_RANGE,numNodes,numNodes);
+        Utility::filterOutElementsOfMatrixLessThanThreshold<float>(functionalMatrix,-FUNC_CORR_RANGE,-FUNC_CORR_RANGE,numNodes,numNodes);
+
+        //make sure that the connectivity of the regions are symmetric, i.e., undirected
+        Utility::symmetrizeMatrixByMean(functionalMatrix,numNodes);
+
+        //Apply Fisher's z transform to the functional connectivities
+        //This establishes a normal distribution of values for the functional correlations
+        Utility::fisherZTransformMatrix<float>(functionalMatrix,numNodes,numNodes);
+    }
+   
+    ///////load extra features
+    float **bctFeaturesMatrix = Utility::allocate2Dmemory<float>(numNodes,numNodes);
+    if(bctFeaturesFile.compare("")!=0)
+    {
+        std::ifstream file; 
+        std::istringstream is;
+        std::string line;
+        file.open(bctFeaturesFile.c_str());
+        if(file.fail())
+        {
+            std::cout << "File not found: "<<bctFeaturesFile<<" !!!!\n";
+            exit(1);
+        }	
+        getline(file, line);
+        std::size_t start = line.find_first_of("<");
+        while (start!=std::string::npos)
+        {
+            std::size_t end = line.find_first_of(">",start+1);
+            string temp = line.substr(start+1,end-start-1);
+            extraFeatureNames.push_back(temp);
+            start=line.find_first_of("<",start+1);
+        }
+
+        getline(file, line);
+        is.clear();
+        is.str(line);
+
+        std::string temp;
+        numExtraFeatures=0;
+        while(is >> temp)
+            numExtraFeatures++;
+
+        file.close();
+
+        Utility::loadMatrixFromFileAfterSkipLine<float>(bctFeaturesFile,bctFeaturesMatrix,numNodes,numExtraFeatures,1);
+    }
+    else
+        numExtraFeatures=0;
+   
+    numFeatures = Node::NUM_STR_FEATURES+Node::NUM_FUNC_FEATURES+numExtraFeatures;
+   
+    ///////////////NODES and EDGES////////////////////////
+    initializeNodeFeatures(streamlineMatrix,functionalMatrix, numNodes);
+    initializeEdgeFeatures(streamlineMatrix,functionalMatrix);
+    initializeExtraNodeFeatures(bctFeaturesMatrix);
+    //finally normalize node features
+    //NOTE: if you are comparing structural features with functional features, this is necessary
+    //however, if you are comparing two graphs with all of their features, then you better not normalize them
+    //NOTE 2:if you would like to use the log scaled connectivity for the edge weights, you need to enable log scaling from above.
+    //also, go to the initializeNodeFeatures() function and check if the nodeStrength is being log scaled in there before
+    //being assigned as node feature.
+    //NOTE 3: you better normalize graphs in the experiment functions after loading the graphs as raw. 
+    //        In short, avoid enabling the normalization in here
+
+    //normalizeNodeFeatures();
+
+    //adjust the range of the edge features to become [0,1] interval
+    //normalizeEdgeFeatures();
+
+    //we need to set the dimensionality of the features for the graph in here.
+    //this will depend on the nature of the data being loaded
+    numFeatures = nodes[0].getNumberOfFeatures();
+
+    Utility::free2Dmemory<float>(streamlineMatrix,numNodes);
+    Utility::free2Dmemory<float>(functionalMatrix,numNodes);
+    Utility::free2Dmemory<float>(bctFeaturesMatrix,numNodes);
+}
+//</editor-fold>
+
+// <editor-fold defaultstate="collapsed" desc=" adjust graph functions: adjustGraph(), normalization, logScaling, zScore, binarizing, thresholding ">
+//normalizes node and edge features of the graph
+void Graph::adjustGraph(std::string action)
+{
+    if(action.find("logScaleStructuralConnectome")!=string::npos)
+        logScaleStructuralGraph();
+    else if(action.find("threshold")!=string::npos) 
+    {
+        vector<string> parametersTokenized;
+        Utility::splitString(action,":",parametersTokenized);
+        float value=std::stof(parametersTokenized[1]);
+        string act=parametersTokenized[0];
+        if(act.find("thresholdByValue")!=string::npos) //input: "thresholdByValueStr:15" or "thresholdByDensityStrFuncAbs:0.15" or "thresholdByValueFuncAbs:0.3" or "thresholdByValueFuncNeg:-0.2"  etc.
+            thresholdEdgesByValue(act,value);
+        else if(act.find("thresholdByDensity")!=string::npos) //input: "thresholdByDensityStr:0.3" or  "thresholdByDensityFuncAbs:0.3" or "thresholdByDensityFuncPos:0.3"  etc.
+            thresholdEdgesByDensity(act,value);
+    }
+    else if(action.find("binarize")!=string::npos) 
+    {
+        vector<string> parametersTokenized;
+        Utility::splitString(action,":",parametersTokenized);
+        float value=std::stof(parametersTokenized[1]);
+        string act=parametersTokenized[0];
+        if(act.find("binarizeByValue")!=string::npos) //input: "binarizeByValueStr:15" or "binarizeByValueFuncAbs:0.3" or "binarizeByValueFuncNeg:-0.2"  etc.
+            binarizeEdgesByValue(act,value);
+        else if(act.find("binarizeByDensity")!=string::npos) //input: "binarizeByDensityStr:0.3" or "binarizeByDensityFuncNeg:0.3" etc.
+            binarizeEdgesByDensity(act,value);
+    }
+    else if(action.find("logScaleAll")!=string::npos || action.find("logScaleEdges")!=string::npos)
+        logScaleEdgeFeatures(action);
+    else if(action.compare("normalizeAll")==0 || action.compare("normalizeEdges")==0)
+        normalizeEdgeFeatures();
+    else if(action.compare("normalizeAll")==0 || action.compare("normalizeNodes")==0)
+        normalizeNodeFeatures();
+}
+
+// <editor-fold defaultstate="collapsed" desc=" normalizeEdgeFeatures(),normalizeNodeFeatures()">
+//Normally, functional correlation values range between ~[-1.5,1.5] after applying Fisher's Z transform.
+//Here we first carry the range to [0,3] than scale it into [0,1] interval.
+void Graph::normalizeEdgeFeatures()
+{
+   float spatialDistance;
+   float minSpatialDistance = Utility::INF;
+   float maxSpatialDistance = Utility::N_INF;
+   
+   float structuralConnectedness;
+   float minStructuralConnectedness = Utility::INF;
+   float maxStructuralConnectedness = Utility::N_INF;
+   
+   float functionalCorrelation;
+   float minFunctionalCorrelation = Utility::INF;
+   float maxFunctionalCorrelation = Utility::N_INF;
+   for(vector<Edge>::iterator edgeIter = edges.begin(); edgeIter != edges.end(); ++edgeIter)
+   {
+      spatialDistance = edgeIter->getFeature(Edge::SPATIAL_DISTANCE);
+      if(spatialDistance>maxSpatialDistance)
+         maxSpatialDistance = spatialDistance;
+      else if(spatialDistance<minSpatialDistance)
+         minSpatialDistance = spatialDistance;
+      
+      structuralConnectedness = edgeIter->getFeature(Edge::STRUCTURAL_CONNECTIVITY);
+      if(structuralConnectedness>maxStructuralConnectedness)
+         maxStructuralConnectedness = structuralConnectedness;
+      else if(structuralConnectedness<minStructuralConnectedness)
+         minStructuralConnectedness = structuralConnectedness;
+      
+      functionalCorrelation = edgeIter->getFeature(Edge::FUNCTIONAL_CONNECTIVITY);
+      if(functionalCorrelation>maxFunctionalCorrelation)
+         maxFunctionalCorrelation = functionalCorrelation;
+      else if(functionalCorrelation<minFunctionalCorrelation)
+         minFunctionalCorrelation = functionalCorrelation;
+   }
+   
+   // taking the range as between zero and the maxSpatialDistance
+   // if the maxSpatialDistance==0, this will cause NAN, so set it to +INF
+   float spatialDistanceRange = (maxSpatialDistance == 0 ? Utility::INF : maxSpatialDistance);
+   
+   // taking the range as between zero and the maxStructuralConnectedness
+   // if the maxStructuralConnectedness==0, this will cause NAN, so set it to +INF
+   float structuralConnectednessRange = (maxStructuralConnectedness == 0 ? Utility::INF : maxStructuralConnectedness);
+   
+   //normalize functional correlation to [0,1] or [-1,1] interval
+   float functionalCorrelationRange;
+   
+   for(vector<Edge>::iterator edgeIter = edges.begin(); edgeIter != edges.end(); ++edgeIter)
+   {
+      spatialDistance = edgeIter->getFeature(Edge::SPATIAL_DISTANCE);
+      spatialDistance /= spatialDistanceRange;
+      edgeIter->setFeature(Edge::SPATIAL_DISTANCE,spatialDistance);
+      
+      structuralConnectedness = edgeIter->getFeature(Edge::STRUCTURAL_CONNECTIVITY);
+      structuralConnectedness /= structuralConnectednessRange;
+      edgeIter->setFeature(Edge::STRUCTURAL_CONNECTIVITY,structuralConnectedness);
+      
+      //Below are two different ways of normalizing functional correlation.
+      //first one maps [min,max] to [0,1] interval
+      //second one maps [min,max] to [-1,1] interval
+      
+      /* [min,max] to [0,1] interval
+      //0 functional correlation becomes 0.5
+      //min negative correlation becomes 0
+      //max positive correlation becomes 1
+      functionalCorrelation = edgeIter->getFeature(Edge::FUNCTIONAL_CONNECTIVITY);
+      if(functionalCorrelation<0)
+      {
+         functionalCorrelationRange = -minFunctionalCorrelation;
+         functionalCorrelation = 0.5-(Utility::absoluteValue(functionalCorrelation)*0.5/functionalCorrelationRange);
+      }
+      else
+      {
+         functionalCorrelationRange = maxFunctionalCorrelation;
+         functionalCorrelation = 0.5+(functionalCorrelation*0.5/functionalCorrelationRange);
+      }
+      */
+
+      //[min,max] to [-1,1] interval
+      //NOTE: this normalization makes sense to be made if Fisher's Z transform is already applied
+      //min negative correlation becomes -1
+      //max positive correlation becomes 1
+      functionalCorrelation = edgeIter->getFeature(Edge::FUNCTIONAL_CONNECTIVITY);
+      if(functionalCorrelation<0)
+      {
+         functionalCorrelationRange = (minFunctionalCorrelation == 0 ? Utility::N_INF : minFunctionalCorrelation); //to avoid divide by zero
+         functionalCorrelation = -functionalCorrelation/functionalCorrelationRange;
+      }
+      else
+      {
+         functionalCorrelationRange = (maxFunctionalCorrelation == 0 ? Utility::INF : maxFunctionalCorrelation); //to avoid divide by zero
+         functionalCorrelation = functionalCorrelation/functionalCorrelationRange;
+      }
+      
+      
+      edgeIter->setFeature(Edge::FUNCTIONAL_CONNECTIVITY,functionalCorrelation);
+   }
+}
+
+void Graph::normalizeNodeFeatures()
+{
+   int numStrFeatures = Node::NUM_STR_FEATURES, numFuncFeatures=Node::NUM_FUNC_FEATURES;
+
+   int structuralFeatureIndex=nodes[0].getIndexOfStructuralFeatures();
+   int functionalFeatureIndex=nodes[0].getIndexOfFunctionalFeatures();
+
+   vector<float> minStructuralFeatures(numStrFeatures,0),minFunctionalFeatures(numFuncFeatures,0);
+   vector<float> maxStructuralFeatures(numStrFeatures,0),maxFunctionalFeatures(numFuncFeatures,0);
+   vector<float> structuralFeatureRange(numStrFeatures,0),functionalFeatureRange(numFuncFeatures,0);
+   float structuralFeature,functionalFeature;
+   
+   for(int i=0;i<numStrFeatures;i++)
+   {
+      minStructuralFeatures[i] = nodes[0].getFeature(structuralFeatureIndex+i);
+      maxStructuralFeatures[i] = nodes[0].getFeature(structuralFeatureIndex+i);
+   }
+   
+   for(int i=0;i<numFuncFeatures;i++)
+   {
+      minFunctionalFeatures[i] = nodes[0].getFeature(functionalFeatureIndex+i);
+      maxFunctionalFeatures[i] = nodes[0].getFeature(functionalFeatureIndex+i);
+   }
+   
+   for ( vector<Node>::iterator nodeIter = nodes.begin(); nodeIter != nodes.end(); ++nodeIter )
+   {
+      for(int i=0;i<numStrFeatures;i++)
+      {
+         //use one of the following two: 2nd one will log scale the connectivity and use it as node strength from there
+         //structuralFeature = nodeIter->getFeature(Node::VOLUME+i);
+         structuralFeature = Utility::log2(nodeIter->getFeature(structuralFeatureIndex+i));
+         if(structuralFeature > maxStructuralFeatures[i])
+            maxStructuralFeatures[i] = structuralFeature;
+         else if(structuralFeature < minStructuralFeatures[i])
+            minStructuralFeatures[i] = structuralFeature;
+      }
+      
+      for(int i=0;i<numFuncFeatures;i++)
+      {
+         //take the absolute value since we are interested in the range at a single quadrant only
+         functionalFeature = Utility::absoluteValue(nodeIter->getFeature(functionalFeatureIndex+i));
+         if(functionalFeature > maxFunctionalFeatures[i])
+            maxFunctionalFeatures[i] = functionalFeature;
+         else if(functionalFeature < minFunctionalFeatures[i])
+            minFunctionalFeatures[i] = functionalFeature;
+      }
+   }
+
+   for(int i=0;i<numStrFeatures;i++)
+   {
+      structuralFeatureRange[i] = maxStructuralFeatures[i];
+   }
+
+   for(int i=0;i<numFuncFeatures;i++)
+   {
+      functionalFeatureRange[i] = maxFunctionalFeatures[i];
+   }
+   
+   for ( vector<Node>::iterator nodeIter = nodes.begin(); nodeIter != nodes.end(); ++nodeIter )
+   {
+      for(int i=0;i<numStrFeatures;i++)
+      {
+         //use one of the following two: 2nd one will log scale the connectivity and use it as node strength from there
+         //structuralFeature = nodeIter->getFeature(structuralFeatureIndex+i);
+         structuralFeature = Utility::log2(nodeIter->getFeature(structuralFeatureIndex+i));
+         structuralFeature /= structuralFeatureRange[i];
+         nodeIter->setFeature(structuralFeatureIndex+i,structuralFeature);
+      }
+
+      for(int i=0;i<numFuncFeatures;i++)
+      {
+         functionalFeature = nodeIter->getFeature(functionalFeatureIndex+i);
+         functionalFeature /= functionalFeatureRange[i];
+         nodeIter->setFeature(functionalFeatureIndex+i,functionalFeature);
+      }
+   }
+}
+// </editor-fold>
+
+// <editor-fold defaultstate="collapsed" desc=" logScaleNodeFeatures(),logScaleEdgeFeatures(),logScaleStructuralGraph(),zScoreStructuralEdgeFeatures()">
+void Graph::logScaleNodeFeatures(std::string action)
+{
+   if(action.find("StrStrength")!=string::npos) 
+   {
+      for(vector<Node>::iterator iter=nodes.begin();iter!=nodes.end();iter++)
+         iter->logScaleFeature(Node::STR_NODE_STRENGTH);
+   }
+   else if(action.find("StrDegree")!=string::npos) 
+   {
+      for(vector<Node>::iterator iter=nodes.begin();iter!=nodes.end();iter++)
+         iter->logScaleFeature(Node::STR_NODE_DEGREE);
+   }
+   else 
+   {
+      cerr<<"You are attempting to log scale nodes of something that you are not supposed to!!! Are you sure you want to do that? See Graph::logScaleNodeFeatures()\n";
+      exit(1);
+   }
+}
+
+void Graph::logScaleEdgeFeatures(std::string action)
+{
+   if(action.find("Str")!=string::npos) 
+   {
+      for(vector<Edge>::iterator iter=edges.begin();iter!=edges.end();iter++)
+         iter->logScaleFeature(Edge::STRUCTURAL_CONNECTIVITY);
+   }
+   else 
+   {
+      cerr<<"You are attempting to log scale edges of something that you are not supposed to!!! Are you sure you want to do that? See Graph::logScaleEdgeFeatures()\n";
+      exit(1);
+   }
+}
+
+//this function log scales the structural edge weights and then reinitializes the node degree/strength wrt this new connectome
+void Graph::logScaleStructuralGraph()
+{
+   int numNodes = nodes.size();
+   
+   float **structuralConnectivity = Utility::allocate2Dmemory<float>(numNodes,numNodes);
+   
+   //load structural connectivity matrix
+   initializeWeightedConnectivityMatrixFromEdgeFeatures(Edge::STRUCTURAL_CONNECTIVITY,structuralConnectivity);
+   //log scale the structural matrix
+   Utility::logScaleMatrix<float>(structuralConnectivity,numNodes,numNodes);
+   //set the values that are less than 1 to zero
+   Utility::filterOutElementsOfMatrixLessThanThreshold<float>(structuralConnectivity,1.0,0.0,numNodes,numNodes);
+   //reinitialize the structural node features (node strength and degree)
+   initializeStructuralNodeFeatures(structuralConnectivity);//strength/degree of incoming and outgoing edges are added as a feature to each node (feature 1-2)
+   
+   //we need to load the functional connectivity matrix and pass it to the initializeEdgeFeatures() function for updating structural edge weights
+   float **functionalConnectivity = Utility::allocate2Dmemory<float>(numNodes,numNodes);
+   initializeWeightedConnectivityMatrixFromEdgeFeatures(Edge::FUNCTIONAL_CONNECTIVITY,functionalConnectivity);
+   
+   initializeEdgeFeatures(structuralConnectivity, functionalConnectivity);
+   
+   Utility::free2Dmemory(structuralConnectivity,numNodes);
+   Utility::free2Dmemory(functionalConnectivity,numNodes);
+}
+
+void Graph::zScoreStructuralEdgeFeatures()
+{
+   int numEdges=edges.size();
+   vector<float> edgeWeights;
+   //edgeWeights.reserve(numEdges);
+   for(vector<Edge>::iterator iter=edges.begin();iter!=edges.end();iter++)
+   {
+      float value=iter->getFeature(Edge::STRUCTURAL_CONNECTIVITY);
+      if(value>0)
+         edgeWeights.push_back(value);
+   }
+
+   float mean=Utility::calculateMean(edgeWeights);
+   float std=Utility::calculateStandardDeviation(edgeWeights,mean);
+   cout<<mean<<"\t"<<std<<endl;
+   for(vector<Edge>::iterator iter=edges.begin();iter!=edges.end();iter++)
+   {
+      float val=iter->getFeature(Edge::STRUCTURAL_CONNECTIVITY);
+      if(val>0)
+      {
+         float newVal=(val-mean)/std;
+         iter->setFeature(Edge::STRUCTURAL_CONNECTIVITY,newVal);
+      }
+   }
+}
+// </editor-fold>
+
+// <editor-fold defaultstate="collapsed" desc=" binarizeEdgesByValue(),binarizeEdgesByDensity(),thresholdEdgesByValue(),thresholdEdgesByDensity()">
+//sets values less than a certain threshold to zero in structural/functional connectomes and the rest to 1
+void Graph::binarizeEdgesByValue(std::string modality,float threshold)
+{
+   int numNodes = this->getNumNodes();
+   //make sure the threshold is a positive value.
+   threshold=Utility::absoluteValue(threshold);
+   
+   float **structuralConnectivity = Utility::allocate2Dmemory<float>(numNodes,numNodes);
+   float **functionalConnectivity = Utility::allocate2Dmemory<float>(numNodes,numNodes);
+   
+   //load structural and functional connectivity matrices 
+   initializeWeightedConnectivityMatrixFromEdgeFeatures(Edge::STRUCTURAL_CONNECTIVITY,structuralConnectivity);
+   initializeWeightedConnectivityMatrixFromEdgeFeatures(Edge::FUNCTIONAL_CONNECTIVITY,functionalConnectivity);
+      
+   //set values less than threshold to zero for structural and/or functional connectomes
+   if(modality.find("Str")!=string::npos)
+      Utility::binarizeMatrix<float>(structuralConnectivity,threshold,numNodes,numNodes);
+   if(modality.find("Func")!=string::npos)
+   {
+      if(modality.find("full")!=string::npos)
+      {
+         //first zero the part that is between +-threshold
+         Utility::filterOutElementsOfMatrixLessThanThreshold<float>(functionalConnectivity,threshold,0,numNodes,numNodes,true);//true at the end is the parameter to do thresholding with the absolute value 
+         //then set the values above +threshold to +1
+         Utility::filterOutElementsOfMatrixGreaterThanOrEqualToThreshold<float>(functionalConnectivity,threshold,1,numNodes,numNodes,false);//true at the end is the parameter to do thresholding with the absolute value 
+         //then set the values below -threshold to -1
+         Utility::filterOutElementsOfMatrixLessThanOrEqualToThreshold<float>(functionalConnectivity,-threshold,-1,numNodes,numNodes,false);//true at the end is the parameter to do thresholding with the absolute value 
+      }
+      else if(modality.find("positive")!=string::npos)
+      {
+         //first zero the part that is below +threshold
+         Utility::filterOutElementsOfMatrixLessThanThreshold<float>(functionalConnectivity,threshold,0,numNodes,numNodes,false);//false at the end is the parameter to do thresholding without the absolute value 
+         //then set the values above +threshold to +1
+         Utility::filterOutElementsOfMatrixGreaterThanOrEqualToThreshold<float>(functionalConnectivity,threshold,1,numNodes,numNodes,false);//true at the end is the parameter to do thresholding with the absolute value 
+      }
+      else if(modality.find("negative")!=string::npos)
+      {
+         //first zero the part that is above -threshold
+         Utility::filterOutElementsOfMatrixGreaterThanThreshold<float>(functionalConnectivity,-threshold,0,numNodes,numNodes,false);//false at the end is the parameter to do thresholding without the absolute value 
+         //then set the values below -threshold to -1
+         Utility::filterOutElementsOfMatrixLessThanOrEqualToThreshold<float>(functionalConnectivity,-threshold,-1,numNodes,numNodes,false);//true at the end is the parameter to do thresholding with the absolute value 
+      }
+   }
+
+   //update structural/functional edge weights
+   initializeEdgeFeatures(structuralConnectivity, functionalConnectivity);
+  
+   //free the allocated memory
+   Utility::free2Dmemory(structuralConnectivity,numNodes);
+   Utility::free2Dmemory(functionalConnectivity,numNodes);
+}
+
+//sets values less than a certain density to zero in structural/functional connectomes and the rest to 1 so as to obtain a certain density in the connectomes
+void Graph::binarizeEdgesByDensity(std::string modality,float density)
+{
+   int numNodes = this->getNumNodes();
+   
+
+   if(density<0 || density>100)
+   {
+      cerr<<"Incorrect density value passed as a parameter to binarizeEdgesByDensity() function where density="<<density<<" .... Exiting!!!"<<endl;
+      exit(1);
+   }
+   else if(density>1) //density could be wither in [0,1] or [1,100] interval. We make the necessary conversion in here
+   {
+      density=density/100.0;
+   }
+   
+   int numToKeep = numNodes*numNodes*density;
+   
+   float **structuralConnectivity = Utility::allocate2Dmemory<float>(numNodes,numNodes);
+   float **functionalConnectivity = Utility::allocate2Dmemory<float>(numNodes,numNodes);
+   
+   //load structural and functional connectivity matrices 
+   initializeWeightedConnectivityMatrixFromEdgeFeatures(Edge::STRUCTURAL_CONNECTIVITY,structuralConnectivity);
+   initializeWeightedConnectivityMatrixFromEdgeFeatures(Edge::FUNCTIONAL_CONNECTIVITY,functionalConnectivity);
+      
+   //set values less than threshold to zero for structural and/or functional connectomes
+   if(modality.find("Str")!=string::npos)
+   {
+      ////sort elements of the matrix in ascending order, and determine the threshold so as to keep the last portion of the resulting vector based on the desired density
+      vector<float> sortedMatrix = Utility::sortValuesOfMatrix(structuralConnectivity,numNodes,numNodes,Utility::MatrixValueIndex::ASCENDING);
+      float threshold=sortedMatrix[sortedMatrix.size() - numToKeep];
+      
+      Utility::binarizeMatrix<float>(structuralConnectivity,threshold,numNodes,numNodes);
+   }
+   if(modality.find("Func")!=string::npos)
+   {
+      if(modality.find("full")!=string::npos)
+      {
+         float **functionalConnectivity_abs = Utility::allocate2Dmemory<float>(numNodes,numNodes);
+         Utility::absoluteValue(functionalConnectivity,functionalConnectivity_abs,numNodes,numNodes);
+         vector<float> sortedMatrix = Utility::sortValuesOfMatrix(functionalConnectivity_abs,numNodes,numNodes,Utility::MatrixValueIndex::ASCENDING);
+         float threshold=sortedMatrix[sortedMatrix.size() - numToKeep];
+         Utility::free2Dmemory(functionalConnectivity_abs,numNodes);
+         
+         //first zero the part that is between +-threshold
+         Utility::filterOutElementsOfMatrixLessThanThreshold<float>(functionalConnectivity,threshold,0,numNodes,numNodes,true);//true at the end is the parameter to do thresholding with the absolute value 
+         //then set the values above +threshold to +1
+         Utility::filterOutElementsOfMatrixGreaterThanOrEqualToThreshold<float>(functionalConnectivity,threshold,1,numNodes,numNodes,false);//true at the end is the parameter to do thresholding with the absolute value 
+         //then set the values below -threshold to -1
+         Utility::filterOutElementsOfMatrixLessThanOrEqualToThreshold<float>(functionalConnectivity,-threshold,-1,numNodes,numNodes,false);//true at the end is the parameter to do thresholding with the absolute value 
+      }
+      else if(modality.find("positive")!=string::npos)
+      {
+         Utility::filterOutElementsOfMatrixLessThanThreshold<float>(functionalConnectivity,0,0,numNodes,numNodes,false);//false at the end is the parameter not to do thresholding with the absolute value 
+         
+         vector<float> sortedMatrix = Utility::sortValuesOfMatrix(functionalConnectivity,numNodes,numNodes,Utility::MatrixValueIndex::ASCENDING);
+         float threshold=sortedMatrix[sortedMatrix.size() - numToKeep];
+         
+         //first zero the part that is below +threshold
+         Utility::filterOutElementsOfMatrixLessThanThreshold<float>(functionalConnectivity,threshold,0,numNodes,numNodes,false);//false at the end is the parameter to do thresholding without the absolute value 
+         //then set the values above +threshold to +1
+         Utility::filterOutElementsOfMatrixGreaterThanOrEqualToThreshold<float>(functionalConnectivity,threshold,1,numNodes,numNodes,false);//true at the end is the parameter to do thresholding with the absolute value 
+      }
+      else if(modality.find("negative")!=string::npos)
+      {
+         Utility::filterOutElementsOfMatrixGreaterThanThreshold<float>(functionalConnectivity,0,0,numNodes,numNodes,false);//false at the end is the parameter not to do thresholding with the absolute value 
+         
+         vector<float> sortedMatrix = Utility::sortValuesOfMatrix(functionalConnectivity,numNodes,numNodes,Utility::MatrixValueIndex::DESCENDING);
+         float threshold=sortedMatrix[sortedMatrix.size() - numToKeep];
+         
+         //first zero the part that is above -threshold
+         Utility::filterOutElementsOfMatrixGreaterThanThreshold<float>(functionalConnectivity,-threshold,0,numNodes,numNodes,false);//false at the end is the parameter to do thresholding without the absolute value 
+         //then set the values below -threshold to -1
+         Utility::filterOutElementsOfMatrixLessThanOrEqualToThreshold<float>(functionalConnectivity,-threshold,-1,numNodes,numNodes,false);//true at the end is the parameter to do thresholding with the absolute value 
+      }
+   }
+   
+   //update structural/functional edge weights
+   initializeEdgeFeatures(structuralConnectivity, functionalConnectivity);
+  
+   //free the allocated memory
+   Utility::free2Dmemory(structuralConnectivity,numNodes);
+   Utility::free2Dmemory(functionalConnectivity,numNodes);
+}
+
+//sets values less than a certain threshold to zero in structural/functional connectomes
+void Graph::thresholdEdgesByValue(std::string modality,float threshold)
+{
+   int numNodes = this->getNumNodes();
+   //make sure the threshold is a positive value.
+   threshold=Utility::absoluteValue(threshold);
+   
+   float **structuralConnectivity = Utility::allocate2Dmemory<float>(numNodes,numNodes);
+   float **functionalConnectivity = Utility::allocate2Dmemory<float>(numNodes,numNodes);
+   
+   //load structural and functional connectivity matrices 
+   initializeWeightedConnectivityMatrixFromEdgeFeatures(Edge::STRUCTURAL_CONNECTIVITY,structuralConnectivity);
+   initializeWeightedConnectivityMatrixFromEdgeFeatures(Edge::FUNCTIONAL_CONNECTIVITY,functionalConnectivity);
+      
+   //set values less than threshold to zero for structural and/or functional connectomes
+   if(modality.find("Str")!=string::npos)
+      Utility::filterOutElementsOfMatrixLessThanThreshold<float>(structuralConnectivity,threshold,0,numNodes,numNodes,false);//true at the end is the parameter to do thresholding with the absolute value
+   if(modality.find("Func")!=string::npos)
+   {
+      if(modality.find("full")!=string::npos)
+         Utility::filterOutElementsOfMatrixLessThanThreshold<float>(functionalConnectivity,threshold,0,numNodes,numNodes,true);//true at the end is the parameter to do thresholding with the absolute value 
+      else if(modality.find("positive")!=string::npos)
+         Utility::filterOutElementsOfMatrixLessThanThreshold<float>(functionalConnectivity,threshold,0,numNodes,numNodes,false);//false at the end is the parameter not to do thresholding with the absolute value 
+      else if(modality.find("negative")!=string::npos)
+         Utility::filterOutElementsOfMatrixGreaterThanThreshold<float>(functionalConnectivity,-threshold,0,numNodes,numNodes,false);//true at the end is the parameter to do thresholding with the absolute value 
+   }
+   
+   //update structural/functional edge weights
+   initializeEdgeFeatures(structuralConnectivity, functionalConnectivity);
+  
+   //free the allocated memory
+   Utility::free2Dmemory(structuralConnectivity,numNodes);
+   Utility::free2Dmemory(functionalConnectivity,numNodes);
+}
+
+//sets values less than a certain threshold to zero in structural/functional connectomes so as to obtain a certain density in the connectomes
+void Graph::thresholdEdgesByDensity(std::string modality,float density)
+{
+   int numNodes = this->getNumNodes();
+   
+   if(density<0 || density>100)
+   {
+      cerr<<"Incorrect density value passed as a parameter to thresholdEdgesByDensity() function where density="<<density<<" .... Exiting!!!"<<endl;
+      exit(1);
+   }
+   else if(density>1) //density could be wither in [0,1] or [1,100] interval. We make the necessary conversion in here
+   {
+      density=density/100.0;
+   }
+   
+   int numToKeep = numNodes*numNodes*density;
+   
+   float **structuralConnectivity = Utility::allocate2Dmemory<float>(numNodes,numNodes);
+   float **functionalConnectivity = Utility::allocate2Dmemory<float>(numNodes,numNodes);
+   
+   //load structural and functional connectivity matrices 
+   initializeWeightedConnectivityMatrixFromEdgeFeatures(Edge::STRUCTURAL_CONNECTIVITY,structuralConnectivity);
+   initializeWeightedConnectivityMatrixFromEdgeFeatures(Edge::FUNCTIONAL_CONNECTIVITY,functionalConnectivity);
+ 
+   //set values less than a threshold, which is determined by the density to keep nonzero edges, to zero for structural and/or functional connectomes
+   if(modality.find("Str")!=string::npos)
+   {
+      ////sort elements of the matrix in ascending order, and determine the threshold so as to keep the last portion of the resulting vector based on the desired density
+      vector<float> sortedMatrix = Utility::sortValuesOfMatrix(structuralConnectivity,numNodes,numNodes,Utility::MatrixValueIndex::ASCENDING);
+      float threshold=sortedMatrix[sortedMatrix.size() - numToKeep];
+      
+      Utility::filterOutElementsOfMatrixLessThanThreshold<float>(structuralConnectivity,threshold,0,numNodes,numNodes,false);//true at the end is the parameter to do thresholding with the absolute value
+   }
+   if(modality.find("Func")!=string::npos)
+   {
+      if(modality.find("full")!=string::npos)
+      {
+         float **functionalConnectivity_abs = Utility::allocate2Dmemory<float>(numNodes,numNodes);
+         Utility::absoluteValue(functionalConnectivity,functionalConnectivity_abs,numNodes,numNodes);
+         vector<float> sortedMatrix = Utility::sortValuesOfMatrix(functionalConnectivity_abs,numNodes,numNodes,Utility::MatrixValueIndex::ASCENDING);
+         float threshold=sortedMatrix[sortedMatrix.size() - numToKeep];
+         Utility::free2Dmemory(functionalConnectivity_abs,numNodes);
+         
+         Utility::filterOutElementsOfMatrixLessThanThreshold<float>(functionalConnectivity,threshold,0,numNodes,numNodes,true);//true at the end is the parameter to do thresholding with the absolute value 
+      }
+      else if(modality.find("positive")!=string::npos)
+      {
+         Utility::filterOutElementsOfMatrixLessThanThreshold<float>(functionalConnectivity,0,0,numNodes,numNodes,false);//false at the end is the parameter not to do thresholding with the absolute value 
+         
+         vector<float> sortedMatrix = Utility::sortValuesOfMatrix(functionalConnectivity,numNodes,numNodes,Utility::MatrixValueIndex::ASCENDING);
+         float threshold=sortedMatrix[sortedMatrix.size() - numToKeep];
+         
+         Utility::filterOutElementsOfMatrixLessThanThreshold<float>(functionalConnectivity,threshold,0,numNodes,numNodes,false);//false at the end is the parameter not to do thresholding with the absolute value 
+      }
+      else if(modality.find("negative")!=string::npos)
+      {
+         Utility::filterOutElementsOfMatrixGreaterThanThreshold<float>(functionalConnectivity,0,0,numNodes,numNodes,false);//false at the end is the parameter not to do thresholding with the absolute value 
+         
+         vector<float> sortedMatrix = Utility::sortValuesOfMatrix(functionalConnectivity,numNodes,numNodes,Utility::MatrixValueIndex::DESCENDING);
+         float threshold=sortedMatrix[sortedMatrix.size() - numToKeep];
+         
+         Utility::filterOutElementsOfMatrixGreaterThanThreshold<float>(functionalConnectivity,threshold,0,numNodes,numNodes,false);//false at the end is the parameter not to do thresholding with the absolute value 
+      }
+   }
+   
+   //update structural/functional edge weights
+   initializeEdgeFeatures(structuralConnectivity, functionalConnectivity);
+  
+   //free the allocated memory
+   Utility::free2Dmemory(structuralConnectivity,numNodes);
+   Utility::free2Dmemory(functionalConnectivity,numNodes);
+}
+// </editor-fold>
+
+// </editor-fold>
+
+// <editor-fold defaultstate="collapsed" desc=" Print functions: printSet(), print() ">
+void Graph::printSet(vector<Node> &set)
+{ 
+    for(int i=0;i<set.size();i++)
+    {	
+        //set[i].print("location");
+        set[i].print("all");
+        cout<<endl;
+    }
+}
+void Graph::printSet(vector<Edge> &set)
+{ 
+    for(int i=0;i<set.size();i++)
+    {	
+        set[i].print();
+        cout<<endl;
+    }
+}
+
+//prints the nodes,edges,all pairs shortest path distance matrix, and predecessor matrix
+//als prints shortest path and diameter
+void Graph::print(string level)
+{
+   if(level.compare("nodes")==0 || level.compare("nodes&edges")==0 || level.compare("all")==0)
+   {
+        cout<<"# Nodes:\n";
+        cout<<nodes.size()<<"\n";
+        printSet(nodes);
+   }
+   if(level.compare("edges")==0 || level.compare("nodes&edges")==0 || level.compare("all")==0)
+   {
+        cout<<"# Edges:\n";
+        cout<<edges.size()<<"\n";
+        printSet(edges);//format: node1 <tab> node2 <tab> distanceOfEdge
+   }
+   /*if(level.compare("diameter")==0 || level.compare("all")==0)
+   {
+      float diameter = calculateDiameter();
+      cout<<"# All pairs shortest path distance:\n";
+      Utility::printMatrix(distanceMatrix,nodes.size());
+
+      cout<<"# Predecessor matrix:\n";
+      Utility::printMatrix(predecessorMatrix,nodes.size());
+
+
+      if(diameter == INF)
+         cout<<"Graph is disconnected!!\n"<<"goodBye\n";
+      else
+      {
+         //print diameter and beginning ending nodes of the path
+         cout<<"# Diameter:"<<diameter<<" is between "<<pt1<<" and "<<pt2<<endl;
+         cout<<"And path is:"<<pt2<<" << ";
+         int node1 = nodeIndexes.find(pt1)->second;//pt2;
+         int node2 = nodeIndexes.find(pt2)->second;
+         while(predecessorMatrix[node1][node2] != node1)
+         {
+             //cout<<nodes[predecessorMatrix[node1][node2]].label<<" << ";
+             cout<<nodes[predecessorMatrix[node1][node2]].getLabel()<<" << ";
+             node2 = predecessorMatrix[node1][node2];
+         }
+         cout<<pt1<<"\n";
+      }
+   }*/
+   if(level.compare("nodeIDs")==0)
+   {
+      for(int i=0;i<nodes.size();i++)
+          cout<<nodes[i].getNodeId()<<" ";
+      cout<<endl;
+   }
+}
+
+void Graph::printGraphAsAVector(std::ostream &out)
+{
+   std::vector<float> extraFeatures;
+   for(vector<Node>::iterator nodeIter=nodes.begin();nodeIter!=nodes.end();nodeIter++)
+   {
+      nodeIter->getExtraFeatures(extraFeatures);
+      Utility::printVector(extraFeatures,out,'\t','\t',4);
+   }
+   out.precision(4);
+   float edgeWeight;
+   for(vector<Edge>::iterator edgeIter=edges.begin();edgeIter!=edges.end();edgeIter++)
+   {
+      edgeWeight=edgeIter->getFeature(Edge::STRUCTURAL_CONNECTIVITY);
+      out<<edgeWeight<<"\t";
+   }
+   out<<endl;   
+}
+
+//</editor-fold>

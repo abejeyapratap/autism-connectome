@@ -1,0 +1,2 @@
+# Ratio of the matching accuracy per node
+0.77444 0.67079 0.37522 0.31833 0.39550 0.42778 0.55157 0.21200 

@@ -1,0 +1,82 @@
+#!/bin/bash
+# 
+
+job=${1} #expRun, expProc, grpDiff, grpDiffLong, corr, complete (to do everything)
+plotExtension=${2} #png or svg
+
+experimentFolder=.
+
+### path to codes that do brain match, python code for processing matching results and calculating group differences
+brainMatch=$experimentFolder/../../../bin/brainMatch
+scriptFolderPath=$experimentFolder/../scripts
+processResults_py=$scriptFolderPath/processResults.py
+groupDifference_similarity_py=$scriptFolderPath/groupDifference_similarity.py
+listScores_py=$scriptFolderPath/listScores.py
+mixedModel_similarity_time_R=$scriptFolderPath/mixedModel_similarity_time.R
+mixedModel_plot_similarity_time_py=$scriptFolderPath/mixedModel_plot_similarity_time.py
+
+### path to connectomes, list of samples to be used in the experiment, and cognitive scores of samples
+connectomes=$experimentFolder/../data/connectomes
+samples=$experimentFolder/../data/subjects_qa.txt
+subjectsInfoPath='../data/tbi_longitudinal_dtiQAPass_20210121.csv'
+
+### parameters to the matching algorithm: assignmentCost can be one of the following <edgesIncludeDiagZeroDiag,edgesIgnoreDiag, edgesIncludeDiagRandDiag> 
+### with the hardness of the problem to be solved in incrasing order
+assignmentCost=" -assCost edgesIgnoreDiag"
+pathType="-pathType direct" # could have been "-pathType shortestPath" or "-pathType wCommunicability -pathLength 2"
+preprocessGraphs="-preprocessGraphs none"
+
+### output path for the results and plots
+results=$experimentFolder/results
+plotsRoot=$experimentFolder/plots
+
+########### run matching experiment ##############
+##calculate distance between healthy controls using graph matching
+if( [ "$job" == "expRun" ] || [ "$job" == "complete" ] );then
+	echo -e "\tRunning groupwise brain matching experiment..."
+	mkdir -p $results
+	$brainMatch -experiment groupwise match -groups all all -data matrix 1 -dti $connectomes/ -samples $samples -printMatches -printSimilarity -modality str_str -outputPath $results/matching_raw $pathType $assignmentCost $preprocessGraphs
+fi
+
+########### connectome level analysis ##############
+resultFileAccuracy=$results/NAS_rt_healthy.res
+if( [ "$job" == "expProc" ] || [ "$job" == "complete" ] );then
+	echo -e "\tProcessing raw experiment results..."
+
+	python $processResults_py -r $results/"matching_raw_0.res" -o $resultFileAccuracy -s $samples -mt accuracy -al group --relativeTo healthy
+fi
+
+if( [ "$job" == "grpDiff" ] || [ "$job" == "complete" ] );then
+	echo -e "\tCalculating group difference and generating "$plotType" plots..."
+	outpath=$plotsRoot/groupDifference
+	mkdir -p $outpath/histograms
+
+	plotType=box #box or violin
+
+	python $groupDifference_similarity_py -r $resultFileAccuracy -o $outpath/ -s $samples --scoreType dist  --plotExtension $plotExtension --plotType $plotType --timePoints any
+	python $groupDifference_similarity_py -r $resultFileAccuracy -o $outpath/ -s $samples --scoreType dist  --plotExtension $plotExtension --plotType $plotType --timePoints any --noHealthyPlot
+fi
+
+if( [ "$job" == "mixedModel_time" ] || [ "$job" == "complete" ] );then
+	echo -e "\tCalculating mixed effects model for predicting similarity score from DSI..."
+	#generate scores file where cognitive socres and matching accuracy scores are listed for each subject
+	mkdir -p $results
+	python $listScores_py -r $resultFileAccuracy -sl $samples  --subjectsInfoPath $subjectsInfoPath -tOut $results/ --scoreType dist --timePoints any
+
+	#run mixed effects model for proSpeed, executive, and verbal
+	#and then generate plots for the model
+	resultsPath=$results/mixedModel
+	plotPath=$plotsRoot/mixedModel
+	mkdir -p $plotPath $resultsPath
+
+	### mixed effect model to predict similarity from days since injury: similarityScore ~ DSI + age + (1|subjectID)
+	echo -e "\t\tCalculating mixed effects model: similarityScore ~ DSI + age + (1|subjectID)"
+	for tp in none; do # <none> using all time points, <s2> removing second time point
+		Rscript $mixedModel_similarity_time_R  --scoreFile $results/allScores.txt --summaryOutputFile $resultsPath/"similarityTime_model_summary_"$tp"Discarded.txt" --interceptOutputFile $resultsPath/"similarityTime_intercept_"$tp"Discarded_" --discardTimePoint $tp > $resultsPath/"similarityTime_model_details_"$tp"Discarded.txt" 2> $resultsPath/"errors_similarityTime_"$tp"Discarded.txt"
+
+		coloringScheme="--coloringScheme group --grayLines mixedModel --lineCoef $resultsPath/similarityTime_intercept_" #alternatively --coloringScheme <gender,group> --dimColorWithAge --noSubjectName --grayLines <mixedModel,spaghetti>
+
+		python $mixedModel_plot_similarity_time_py -m $resultsPath/"similarityTime_model_summary_" -s $results/allScores.txt -pOut $plotPath/ --plotExtension $plotExtension --discardTimePoint $tp  --coloringScheme group --grayLines spaghetti --noSubjectName --lineCoef $resultsPath/similarityScore_intercept_"$tp"Discarded_similarityScore0.txt 
+	done
+fi
+
