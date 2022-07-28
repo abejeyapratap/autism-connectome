@@ -32,8 +32,23 @@ relativeTo=args['relativeTo']
 noSymmetry=args['noSymmetry']
 #discardOutliersFromHealthy=args['discardOutliersFromHealthy']
 
-##############load subjet IDs for which we have a score#########################
-with open(subjectListPath,"r") as f:
+##############load subject IDs for which we have a score#########################
+tdcPath = "../data/tdc.txt"
+asdPath = "../data/asd.txt"
+
+with open(tdcPath, "r") as f:
+    healthyIDs = f.read().splitlines()
+
+with open(asdPath, "r") as f:
+    patientIDs = f.read().splitlines()
+
+healthyOrder = list(range(len(healthyIDs)))
+
+# print(len(healthyIDs), len(patientIDs))
+# print(healthyOrder[:])
+# quit()
+
+""" with open(subjectListPath,"r") as f:
     subjectList =  f.read().splitlines()
 numScans=len(subjectList)
 
@@ -45,28 +60,37 @@ for order,ID in enumerate(subjectList):
         healthyIDs.append(ID.split('_')[0])
         healthyOrder.append(order)
     elif (ID.split("_")[0][0]=='p') and (ID.split('_')[0] not in patientIDs):
-        patientIDs.append(ID.split('_')[0])
+        patientIDs.append(ID.split('_')[0]) """
 
 patientLongitudinalOrder = np.full((len(patientIDs),3),-1,dtype=int)
 ### Get indices of healthy controls and patients(_s1,_s2,_s3)
-for i in range(len(subjectList)):
+""" for i in range(len(subjectList)):
     ID=subjectList[i].split("_")[0]
     if ID in patientIDs:
         timepoint=int(subjectList[i].split("_")[-1][-1])-1
-        patientLongitudinalOrder[patientIDs.index(ID)][timepoint] = i
+        patientLongitudinalOrder[patientIDs.index(ID)][timepoint] = i """
 
 ### Get indices of healthy controls and patients(_s1,_s2,_s3)
 healthy=healthyOrder
+
+# print(len(subjectList))
+""" print(len(healthyIDs), len(patientIDs))
+print(patientIDs[:3])
+print(len(healthy))
+print(healthy[:]) """
+# print(patientLongitudinalOrder)
+# quit()
+
 patientS1=[]
 patientS2=[]
 patientS3=[]
-for i in range(len(patientLongitudinalOrder)):
+""" for i in range(len(patientLongitudinalOrder)):
     if (patientLongitudinalOrder[i,0]!=-1):
         patientS1.append(patientLongitudinalOrder[i,0])
     if (patientLongitudinalOrder[i,1]!=-1):
         patientS2.append(patientLongitudinalOrder[i,1])
     if (patientLongitudinalOrder[i,2]!=-1):
-        patientS3.append(patientLongitudinalOrder[i,2])
+        patientS3.append(patientLongitudinalOrder[i,2]) """
 
 
 ##############load results of the structure-function coupling experiment###################
