@@ -33,3 +33,4 @@
 
 # Connectome data files
 connectomes*
+*.res
