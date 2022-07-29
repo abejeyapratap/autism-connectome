@@ -50,7 +50,7 @@ fi
 
 if( [ "$job" == "grpDiff" ] || [ "$job" == "complete" ] );then
 	echo -e "\tCalculating group difference and generating "$plotType" plots..."
-	outpath=$plotsRoot/groupDifference
+	outpath=$plotsRoot/groupDifference2
 	mkdir -p $outpath/histograms
 
 	plotType=box #box or violin

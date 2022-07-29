@@ -33,9 +33,10 @@ noSymmetry=args['noSymmetry']
 #discardOutliersFromHealthy=args['discardOutliersFromHealthy']
 
 ##############load subject IDs for which we have a score#########################
+
+# load healthy & patient IDs from files
 tdcPath = "../data/tdc.txt"
 asdPath = "../data/asd.txt"
-
 with open(tdcPath, "r") as f:
     healthyIDs = f.read().splitlines()
 
@@ -43,6 +44,7 @@ with open(asdPath, "r") as f:
     patientIDs = f.read().splitlines()
 
 healthyOrder = list(range(len(healthyIDs)))
+healthy = healthyOrder
 
 # print(len(healthyIDs), len(patientIDs))
 # print(healthyOrder[:])
@@ -71,7 +73,7 @@ patientLongitudinalOrder = np.full((len(patientIDs),3),-1,dtype=int)
         patientLongitudinalOrder[patientIDs.index(ID)][timepoint] = i """
 
 ### Get indices of healthy controls and patients(_s1,_s2,_s3)
-healthy=healthyOrder
+# healthy=healthyOrder
 
 # print(len(subjectList))
 """ print(len(healthyIDs), len(patientIDs))

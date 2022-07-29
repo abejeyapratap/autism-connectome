@@ -40,8 +40,30 @@ plotType=args['plotType']
 timePoints=args['timePoints']
 noHealthyPlot=args['noHealthyPlot']
 
-##############load subjet IDs for which we have a score#########################
-subjectList =  open(subjectListPath,"r").read().splitlines()
+##############load subject IDs for which we have a score#########################
+
+# load healthy & patient IDs from files
+tdcPath = "../data/tdc.txt"
+asdPath = "../data/asd.txt"
+with open(tdcPath, "r") as f:
+    healthyIDs = f.read().splitlines()
+
+with open(asdPath, "r") as f:
+    patientIDs = f.read().splitlines()
+
+healthySize = len(healthyIDs)
+patientSize = len(patientIDs)
+healthyOrder = list(range(healthySize))
+healthy = healthyOrder
+patientsOrder = list(range(healthySize, healthySize+patientSize))
+patients = patientsOrder
+# print(len(healthy), len(patients))
+# print(healthyIDs[healthySize-1])
+# print(patientIDs[0], patientIDs[patientSize-1])
+# quit()
+
+
+""" subjectList =  open(subjectListPath,"r").read().splitlines()
 numScans=len(subjectList)
 
 patientIDs=[]
@@ -52,17 +74,17 @@ for order,ID in enumerate(subjectList):
         healthyIDs.append(ID.split('_')[0])
         healthyOrder.append(order)
     elif (ID.split("_")[0][0]=='p') and (ID.split('_')[0] not in patientIDs):
-        patientIDs.append(ID.split('_')[0])
+        patientIDs.append(ID.split('_')[0]) """
 
 patientLongitudinalOrder = np.full((len(patientIDs),3),-1,dtype=int)
 ### Get indices of healthy controls and patients(_s1,_s2,_s3)
-for i in range(len(subjectList)):
+""" for i in range(len(subjectList)):
     ID=subjectList[i].split("_")[0]
     if ID in patientIDs:
         timepoint=int(subjectList[i].split("_")[-1][-1])-1
-        patientLongitudinalOrder[patientIDs.index(ID)][timepoint] = i
+        patientLongitudinalOrder[patientIDs.index(ID)][timepoint] = i """
 
-if timePoints=="three":
+""" if timePoints=="three":
     rowsToDelete=[]
     for i in range(len(patientLongitudinalOrder)):
         if (patientLongitudinalOrder[i,0]==-1 or patientLongitudinalOrder[i,1]==-1 or patientLongitudinalOrder[i,2]==-1):
@@ -70,40 +92,53 @@ if timePoints=="three":
     patientLongitudinalOrder = np.delete(patientLongitudinalOrder,rowsToDelete,axis=0)
     for i in list(reversed(range(len(patientIDs)))):
         if(i in rowsToDelete):
-            del patientIDs[i]
+            del patientIDs[i] """
     
 
 ### Get indices of healthy controls and patients(_s1,_s2,_s3)
-healthy=healthyOrder
+# healthy=healthyOrder
 patientS1=[]
 patientS2=[]
 patientS3=[]
-for i in range(len(patientLongitudinalOrder)):
+""" for i in range(len(patientLongitudinalOrder)):
     if (patientLongitudinalOrder[i,0]!=-1):
         patientS1.append(patientLongitudinalOrder[i,0])
     if (patientLongitudinalOrder[i,1]!=-1):
         patientS2.append(patientLongitudinalOrder[i,1])
     if (patientLongitudinalOrder[i,2]!=-1):
-        patientS3.append(patientLongitudinalOrder[i,2])
+        patientS3.append(patientLongitudinalOrder[i,2]) """
 
 if(timePoints=="three"):
     cutOff=6
 else:
     cutOff=3
 
-controlGroups=[healthy,healthy,healthy,patientS1,patientS2,patientS1][:cutOff]
+
+controlGroups = [healthy]
+patientGroups = [patients]
+controlGroupNames = ["TDC"]
+patientGroupNames = ["ASD"]
+
+""" controlGroups=[healthy,healthy,healthy,patientS1,patientS2,patientS1][:cutOff]
 patientGroups=[patientS1,patientS2,patientS3,patientS2,patientS3,patientS3][:cutOff]
 controlGroupNames=['Healthy','Healthy','Healthy','3_months','6_months','3_months'][:cutOff]
-patientGroupNames=['3_months','6_months','12_months','6_months','12_months','12_months'][:cutOff]
+patientGroupNames=['3_months','6_months','12_months','6_months','12_months','12_months'][:cutOff] """
+
 ##############load results of the structure-function coupling experiment###################
 fileContent =  open(resultFile,"r").read().splitlines()
 numNodes = int(fileContent[1].split('\t')[0])
 numSubjects = int(fileContent[1].split('\t')[1])
 measureType = str(fileContent[3]) 
 scoreName = str(fileContent[5]) 
-scores=np.zeros(numSubjects)
+scores = np.zeros(numSubjects)
+# load matching accuracy scores
 for i in range(numSubjects):
     scores[i] = float(fileContent[7].split('\t')[i])
+
+# print(numNodes, numSubjects)
+# print(len(scores))
+# print(scores[:5], scores[len(scores)-1])
+# quit()
 
 if(scoreType=="z"):
     scores = calculateZScore(scores,healthy)
@@ -118,13 +153,15 @@ pValue_parametric=np.zeros(len(patientGroups))
 pValue_nonparametric=np.zeros(len(patientGroups))
 
 #calculate group difference btw healthy vs patients at three time points
-for i in range(3): 
+numTimes = 1 # used to be 3!
+for i in range(numTimes): 
     if len(scores[patientGroups[i]])==0:
         continue
     effectSize_parametric[i], pValue_parametric[i] = calculateGroupDifference(scores[controlGroups[i]],scores[patientGroups[i]],parametric=True,paired=False)
     effectSize_nonparametric[i], pValue_nonparametric[i] = calculateGroupDifference(scores[controlGroups[i]],scores[patientGroups[i]],parametric=False,paired=False)
     histogramPath=outputFolder+"histograms/"+timePoints+"_"+measureType+"_"+scoreType+"_"+str(patientGroupNames[i])+"_"+str(controlGroupNames[i])+"."+plotExtension
     drawHistogram2Dataset(scores[healthy],scores[patientGroups[i]],histogramPath,effectSize_parametric[i],pValue_parametric[i],'','',controlGroupNames[i],patientGroupNames[i],"",xLabel=measureType,yLabel="frequency",color1='dodgerblue',color2='magenta')
+
 
 #calculate group difference among patients at three time points
 if(timePoints=="three"):
@@ -140,23 +177,25 @@ if(timePoints=="three"):
 
 corrected_pValue_parametric=fdr(pValue_parametric)
 corrected_pValue_nonparametric=fdr(pValue_nonparametric)
+# corrected_pValue_parametric=pValue_parametric
+# corrected_pValue_nonparametric=pValue_nonparametric
 
 outputPath=outputFolder+timePoints+"_"+measureType+"_groupDifference.txt"
 
 reportFile=open(outputPath,'w')
 reportFile.write("============== Dataset statistics ==============\n")
 reportFile.write("\tHealthy\t numSubjects:%d\tmedian:%0.3f\tmean:%0.3f\tvar:%0.3f\tstd:%0.3f \n" % (len(healthy),np.median(scores[healthy]),scores[healthy].mean(),scores[healthy].var(),scores[healthy].std()))
-reportFile.write("\t3 Months\t numSubjects:%d\tmedian:%0.3f\tmean:%0.3f\tvar:%0.3f\tstd:%0.3f \n" % (len(patientS1),np.median(scores[patientS1]),scores[patientS1].mean(),scores[patientS1].var(),scores[patientS1].std()))
-reportFile.write("\t6 Months\t numSubjects:%d\tmedian:%0.3f\tmean:%0.3f\tvar:%0.3f\tstd:%0.3f \n" % (len(patientS2),np.median(scores[patientS2]),scores[patientS2].mean(),scores[patientS2].var(),scores[patientS2].std()))
-reportFile.write("\t12 Months\t numSubjects:%d\tmedian:%0.3f\tmean:%0.3f\tvar:%0.3f\tstd:%0.3f \n" % (len(patientS3),np.median(scores[patientS3]),scores[patientS3].mean(),scores[patientS3].var(),scores[patientS3].std()))
+reportFile.write("\tPatients\t numSubjects:%d\tmedian:%0.3f\tmean:%0.3f\tvar:%0.3f\tstd:%0.3f \n" % (len(patients),np.median(scores[patients]),scores[patients].mean(),scores[patients].var(),scores[patients].std()))
+""" reportFile.write("\t6 Months\t numSubjects:%d\tmedian:%0.3f\tmean:%0.3f\tvar:%0.3f\tstd:%0.3f \n" % (len(patientS2),np.median(scores[patientS2]),scores[patientS2].mean(),scores[patientS2].var(),scores[patientS2].std()))
+reportFile.write("\t12 Months\t numSubjects:%d\tmedian:%0.3f\tmean:%0.3f\tvar:%0.3f\tstd:%0.3f \n" % (len(patientS3),np.median(scores[patientS3]),scores[patientS3].mean(),scores[patientS3].var(),scores[patientS3].std())) """
            
 
 reportFile.write("============== F/Barlett/Levene Test for checking equalness of variance of patients relative to healthy controls ==============\n")
 for discardOutliers in [True,False]:
     reportFile.write("Discard outliers:"+str(discardOutliers)+"\n")
-    reportFile.write("\tHealthy vs 3 months\t F-test:%f\tBartlett:%f\tLevene:%f \n" % (checkDifferenceOfVariance(scores[patientS1],scores[healthy],'F',discardOutliers)[1],checkDifferenceOfVariance(scores[healthy],scores[patientS1],'bartlett',discardOutliers)[1],checkDifferenceOfVariance(scores[healthy],scores[patientS1],'levene',discardOutliers)[1]))
-    reportFile.write("\tHealthy vs 6 months\t F-test:%f\tBartlett:%f\tLevene:%f \n" % (checkDifferenceOfVariance(scores[patientS2],scores[healthy],'F',discardOutliers)[1],checkDifferenceOfVariance(scores[healthy],scores[patientS2],'bartlett',discardOutliers)[1],checkDifferenceOfVariance(scores[healthy],scores[patientS2],'levene',discardOutliers)[1]))
-    reportFile.write("\tHealthy vs 12 months\t F-test:%f\tBartlett:%f\tLevene:%f \n" % (checkDifferenceOfVariance(scores[patientS3],scores[healthy],'F',discardOutliers)[1],checkDifferenceOfVariance(scores[healthy],scores[patientS3],'bartlett',discardOutliers)[1],checkDifferenceOfVariance(scores[healthy],scores[patientS3],'levene',discardOutliers)[1]))
+    reportFile.write("\tHealthy vs Patients\t F-test:%f\tBartlett:%f\tLevene:%f \n" % (checkDifferenceOfVariance(scores[patients],scores[healthy],'F',discardOutliers)[1],checkDifferenceOfVariance(scores[healthy],scores[patients],'bartlett',discardOutliers)[1],checkDifferenceOfVariance(scores[healthy],scores[patients],'levene',discardOutliers)[1]))
+    # reportFile.write("\tHealthy vs 6 months\t F-test:%f\tBartlett:%f\tLevene:%f \n" % (checkDifferenceOfVariance(scores[patientS2],scores[healthy],'F',discardOutliers)[1],checkDifferenceOfVariance(scores[healthy],scores[patientS2],'bartlett',discardOutliers)[1],checkDifferenceOfVariance(scores[healthy],scores[patientS2],'levene',discardOutliers)[1]))
+    # reportFile.write("\tHealthy vs 12 months\t F-test:%f\tBartlett:%f\tLevene:%f \n" % (checkDifferenceOfVariance(scores[patientS3],scores[healthy],'F',discardOutliers)[1],checkDifferenceOfVariance(scores[healthy],scores[patientS3],'bartlett',discardOutliers)[1],checkDifferenceOfVariance(scores[healthy],scores[patientS3],'levene',discardOutliers)[1]))
 
 
 reportFile.write("============== Group Difference: "+timePoints+" "+measureType+"  "+scoreType+" score==============\n")
@@ -180,21 +219,26 @@ reportFile.close()
 ##########draw boxplot or violin plot matching scores of systems###################
 colors=['#351C4D', '#AB3E16','#849974','#2096BA','#F7DFD4','#F5AB99'] #nightfall, rust, fresh, shutter blue, macaron, tropical pink
 if(noHealthyPlot==True):
-    numTimePoints=3
+    # numTimePoints=3
+    numTimePoints = 1
     outputPath=outputFolder+timePoints+"_"+measureType+"_"+scoreType+"_noHealthyPlot."+plotExtension
 else:
-    numTimePoints=4
+    # numTimePoints=4
+    numTimePoints = 2
     outputPath=outputFolder+timePoints+"_"+measureType+"_"+scoreType+"."+plotExtension
-data=[scores[patientS1],scores[patientS2],scores[patientS3],scores[healthy]][:numTimePoints]
-dataLabels=['3 months','6 months','12 months','Healthy'][:numTimePoints]
 
+# data=[scores[patientS1],scores[patientS2],scores[patientS3],scores[healthy]][:numTimePoints]
+# dataLabels=['3 months','6 months','12 months','Healthy'][:numTimePoints]
+
+data = [scores[patients], scores[healthy]][:numTimePoints]
+dataLabels=['Patient','Healthy'][:numTimePoints]
 
 minY=min([min(l) for l in data])
 maxY=max([max(l) for l in data])
 offset=(maxY-minY)/5.0
 #generate enough empty space above and below boxes
-#yLim=[minY-offset/2.0,maxY+offset] ## use these lines to  make space specific to figure
-yLim=[67,102] ## use these lines to make the space constant (such as across different plots)
+yLim=[minY-offset/2.0,maxY+offset] ## use these lines to  make space specific to figure
+# yLim=[67,102] ## use these lines to make the space constant (such as across different plots)
 scoreName="network similarity (%)"
 if plotType=="box":
     drawBoxPlot(data,dataLabels,title,outputPath,xLabel='',yLabel=scoreName,colors=colors,rotation=0,plotScatter=True,yLim=yLim,middleLine='median') #since we use Mann-Whitney U test for group dofference, we should plot median line in boxplots
