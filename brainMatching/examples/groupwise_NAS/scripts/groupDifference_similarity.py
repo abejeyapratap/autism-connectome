@@ -43,8 +43,8 @@ noHealthyPlot=args['noHealthyPlot']
 ##############load subject IDs for which we have a score#########################
 
 # load healthy & patient IDs from files
-tdcPath = "../data/tdc.txt"
-asdPath = "../data/asd.txt"
+tdcPath = "../data/tdc_schaefer.txt"
+asdPath = "../data/asd_schaefer.txt"
 with open(tdcPath, "r") as f:
     healthyIDs = f.read().splitlines()
 
