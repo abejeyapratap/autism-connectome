@@ -4,10 +4,10 @@
 plotExtension=png #png or svg
 
 ###run experiments
-# ./runMe.sh expRun
+./runMe.sh expRun
 
 ##process connectomes
-# ./runMe.sh expProc
+./runMe.sh expProc
 
 ## connectome level group difference (-- aka boxplot)
 ./runMe.sh grpDiff $plotExtension

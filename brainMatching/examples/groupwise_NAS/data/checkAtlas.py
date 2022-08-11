@@ -8,7 +8,7 @@ dFiles = []
 with open("desikan_filtered.txt", "r") as f:
     dFiles = f.read().splitlines()
 
-print(len(sFiles), len(dFiles))
+# print(len(sFiles), len(dFiles))
 
 count = 0
 for i, _ in enumerate(sFiles):
@@ -16,4 +16,21 @@ for i, _ in enumerate(sFiles):
     d = "_".join(dFiles[i].split("_", 2)[:2])
     if s != d:
         count += 1
-print(count)
+# print(count)
+
+# Sanity check to see if connectomes were filtered properly
+""" for file in os.listdir("./connectomes_new_schaefer"):
+    with open(f"./connectomes_new_schaefer/{file}") as f:
+        temp = f.read().splitlines()
+        if len(temp) != 200 or len(temp[0].split()) != 200:
+            print(file)
+            # print(len(temp), len(temp[0]))
+            break """
+
+for file in os.listdir("./connectomes2"):
+    with open(f"./connectomes2/{file}") as f:
+        temp = f.read().splitlines()
+        if len(temp) != 202 or len(temp[0].split()) != 202:
+            print(file)
+            print(len(temp), len(temp[0]))
+            break

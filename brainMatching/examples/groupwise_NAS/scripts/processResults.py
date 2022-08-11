@@ -35,8 +35,11 @@ noSymmetry=args['noSymmetry']
 ##############load subject IDs for which we have a score#########################
 
 # load healthy & patient IDs from files
-tdcPath = "../data/tdc.txt"
-asdPath = "../data/asd.txt"
+# tdcPath = "../data/tdc_schaefer.txt"
+# asdPath = "../data/asd_schaefer.txt"
+tdcPath = "../data/tdc_desikan.txt"
+asdPath = "../data/asd_desikan.txt"
+
 with open(tdcPath, "r") as f:
     healthyIDs = f.read().splitlines()
 
@@ -50,56 +53,38 @@ healthy = healthyOrder
 # print(healthyOrder[:])
 # quit()
 
-""" with open(subjectListPath,"r") as f:
+with open(subjectListPath,"r") as f:
     subjectList =  f.read().splitlines()
 numScans=len(subjectList)
 
-patientIDs=[]
-healthyIDs=[]
-healthyOrder=[]
-for order,ID in enumerate(subjectList):
-    if (ID.split("_")[0][0]=='c'):
-        healthyIDs.append(ID.split('_')[0])
-        healthyOrder.append(order)
-    elif (ID.split("_")[0][0]=='p') and (ID.split('_')[0] not in patientIDs):
-        patientIDs.append(ID.split('_')[0]) """
-
-patientLongitudinalOrder = np.full((len(patientIDs),3),-1,dtype=int)
-### Get indices of healthy controls and patients(_s1,_s2,_s3)
-""" for i in range(len(subjectList)):
-    ID=subjectList[i].split("_")[0]
-    if ID in patientIDs:
-        timepoint=int(subjectList[i].split("_")[-1][-1])-1
-        patientLongitudinalOrder[patientIDs.index(ID)][timepoint] = i """
-
-### Get indices of healthy controls and patients(_s1,_s2,_s3)
-# healthy=healthyOrder
-
-# print(len(subjectList))
-""" print(len(healthyIDs), len(patientIDs))
-print(patientIDs[:3])
-print(len(healthy))
-print(healthy[:]) """
-# print(patientLongitudinalOrder)
-# quit()
 
 patientS1=[]
 patientS2=[]
 patientS3=[]
-""" for i in range(len(patientLongitudinalOrder)):
-    if (patientLongitudinalOrder[i,0]!=-1):
-        patientS1.append(patientLongitudinalOrder[i,0])
-    if (patientLongitudinalOrder[i,1]!=-1):
-        patientS2.append(patientLongitudinalOrder[i,1])
-    if (patientLongitudinalOrder[i,2]!=-1):
-        patientS3.append(patientLongitudinalOrder[i,2]) """
-
 
 ##############load results of the structure-function coupling experiment###################
 with open(resultFilePath,"r") as resultFile:
     fileContent = resultFile.read().splitlines()
 numNodes = int(fileContent[3].split('\t')[0])
 numSubjects = int(fileContent[3].split('\t')[1])
+
+# print(numNodes, numSubjects)
+# quit()
+
+# print(fileContent[6+numSubjects])
+""" matchings=np.array([np.fromstring(cont,dtype=int,sep='\t') for cont in fileContent[6+numSubjects:-1]])
+# print(len(matchings[0]))
+scores=np.zeros((numSubjects,numSubjects),dtype=float)
+for i in range(1):
+    row=matchings[i][0] #first colulmn is the order number of the first subject
+    col=matchings[i][1] #second colulmn is the order number of the second subject
+    for j in range(numNodes):
+        if(matchings[i][2+j]==j):
+            scores[row][col]+=1
+    scores/=float(numNodes)
+    scores*=100
+    print(scores[row][col])
+quit() """
 
 ###load similarity scores and the matchings
 if(analysisLevel=="group"):
@@ -122,32 +107,6 @@ if(analysisLevel=="group"):
     ### now, calculate average matching/similarity scores relative to healthy controls
     ### NOTE: we are discarding the matching of a healthy control subject to itself in 
     ###       calculation of each subjec't average score relative to healthy controls
-#    print(healthyIDs)
-#    print(healthy)
-#    if(discardOutliersFromHealthy==True):
-#        tempScores_avg=np.zeros(len(healthy))
-#        for rowOrder in range(len(healthy)):
-#            count=0
-#            row=healthy[rowOrder]
-#            for colOrder in range(len(healthy)):
-#                col=healthy[colOrder]
-#                if(row!=col):
-#                    if(noSymmetry==True):
-#                        tempScores_avg[row] += scores[row][col]
-#                    else:
-#                        tempScores_avg[row] += (scores[row][col]+scores[col][row])/2.0
-#                    count+=1
-#            tempScores_avg[row] /= float(count)
-#        indices=getOutlierIndices(tempScores_avg)
-#        scores=np.delete(scores,indices,0)
-#        scores=np.delete(scores,indices,1)
-#        for i in reversed(range(len(healthy))):
-#            del healthy[i]
-#            del healthyIDs[i]
-#            
-#    print(healthyIDs)
-#    print(healthy)
-
     scores_avg = np.zeros(len(scores))
     if(relativeTo=="healthy"):
         for row in range(numSubjects):
