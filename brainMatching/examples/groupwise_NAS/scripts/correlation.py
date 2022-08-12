@@ -43,18 +43,21 @@ colors=['#351C4D', '#AB3E16','#849974','#2096BA','#F7DFD4','#F5AB99'] #nightfall
 outputFolder = "../experiment/plots/correl/"
 outputPath=outputFolder+"result.png"
 
-similarity = []
-cognitive = []
-# Calculate correlation values
-r_pearson, p_pearson = stt.pearsonr(similarity,cognitive)
-r_spearman, p_spearman = stt.spearmanr(similarity,cognitive)
+allPatientsPath = "../data/all_patients_ados.csv"
+allPatientsDf = pd.read_csv(allPatientsPath)
 
+similarity, ados = allPatientsDf['NNS'], allPatientsDf['ados_css']
+# Calculate correlation values
+r_pearson, p_pearson = stt.pearsonr(similarity, ados)
+r_spearman, p_spearman = stt.spearmanr(similarity, ados)
+print(r_pearson, p_pearson)
+quit()
 
 # def drawCorrelationPlot(data1,data2,r,p,data1Label,data2Label,plotTitle,outputPath,pointNames=None,text=""):
 # def drawCorrelationPlot(data1,data2,r,p,data1Label,data2Label,plotTitle,outputPath,lineColor='darkorchid',dotColor='orchid',pointNames=None,text="")
 sampleGroupNames=['HUH','6 months','12 months']
-cognitiveScoreNames = ['ADOS','age']
-plot=drawCorrelationPlot(similarity,cognitive,r_pearson,p_pearson,"matching accuracy",cognitiveScoreNames[0],sampleGroupNames[0],outputPath)
+adosScoreNames = ['ADOS','age']
+plot=drawCorrelationPlot(similarity,ados,r_pearson,p_pearson,"matching accuracy",adosScoreNames[0],sampleGroupNames[0],outputPath)
 
 ### BOXPLOT ### 
 """ # data = [scores[patients], scores[healthy]]
