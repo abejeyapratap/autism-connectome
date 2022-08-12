@@ -38,10 +38,9 @@ scores = np.zeros(numSubjects)
 for i in range(numSubjects):
     scores[i] = float(fileContent[7].split('\t')[i]) """
 
-# colors=['#351C4D', '#AB3E16','#849974','#2096BA','#F7DFD4','#F5AB99'] #nightfall, rust, fresh, shutter blue, macaron, tropical pink
 
 # path = "../data/ados/all_patients_ados.csv"
-path = "../data/ados/mid_low_patients_ados.csv"
+path = "../data/ados/mid_up_patients_ados.csv"
 patientsDf = pd.read_csv(path)
 similarity, ados = patientsDf['NNS'], patientsDf['ados_css']
 
@@ -51,15 +50,15 @@ r_spearman, p_spearman = stt.spearmanr(similarity, ados)
 
 # save Scatter Plot
 outputFolder = "../experiment/plots/correl/"
-outputPath=outputFolder+"mid_low.png"
+outputPath=outputFolder+"mid_up.png"
 
-# def drawCorrelationPlot(data1,data2,r,p,data1Label,data2Label,plotTitle,outputPath,pointNames=None,text=""):
-# def drawCorrelationPlot(data1,data2,r,p,data1Label,data2Label,plotTitle,outputPath,lineColor='darkorchid',dotColor='orchid',pointNames=None,text="")
-plot=drawCorrelationPlot(similarity, ados, r_pearson, p_pearson, "NNS","ADOS"," ", outputPath)
+plot=drawCorrelationPlot(similarity, ados, r_pearson, p_pearson, "NNS","ADOS","", outputPath)
 plot.close()
 
 ### BOXPLOT ### 
-""" # data = [scores[patients], scores[healthy]]
+""" 
+colors=['#351C4D', '#AB3E16','#849974','#2096BA','#F7DFD4','#F5AB99'] #nightfall, rust, fresh, shutter blue, macaron, tropical pink
+# data = [scores[patients], scores[healthy]]
 # dataLabels=['Patient','Healthy']
 data = [scores[patients]]
 dataLabels=['Patient']
