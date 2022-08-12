@@ -31,6 +31,8 @@
 *.out
 *.app
 
+.DS_Store
+
 # Connectome data files
 connectomes*
 # *.res
