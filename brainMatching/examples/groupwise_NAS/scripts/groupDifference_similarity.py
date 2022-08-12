@@ -44,8 +44,12 @@ noHealthyPlot=args['noHealthyPlot']
 # Load healthy & patient IDs from files
 # tdcPath = "../data/tdc_schaefer.txt"
 # asdPath = "../data/asd_schaefer.txt"
-tdcPath = "../data/tdc_desikan.txt"
-asdPath = "../data/asd_desikan.txt"
+# tdcPath = "../data/tdc_schaefer_male.txt"
+# asdPath = "../data/asd_schaefer_male.txt"
+# tdcPath = "../data/tdc_desikan.txt"
+# asdPath = "../data/asd_desikan.txt"
+tdcPath = "../data/tdc_desikan_male.txt"
+asdPath = "../data/asd_desikan_male.txt"
 
 with open(tdcPath, "r") as f:
     healthyIDs = f.read().splitlines()

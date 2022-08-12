@@ -15,14 +15,6 @@ listScores_py=$scriptFolderPath/listScores.py
 mixedModel_similarity_time_R=$scriptFolderPath/mixedModel_similarity_time.R
 mixedModel_plot_similarity_time_py=$scriptFolderPath/mixedModel_plot_similarity_time.py
 
-### path to connectomes, list of samples to be used in the experiment, and cognitive scores of samples
-# connectomes=$experimentFolder/../data/connectomes2 # 200/203 ROIs instead of 220
-# connectomes=$experimentFolder/../data/connectomes_schaefer
-connectomes=$experimentFolder/../data/connectomes_desikan
-samples=$experimentFolder/../data/desikan_filtered.txt
-# samples=$experimentFolder/../data/smallS.txt
-# samples=$experimentFolder/../data/subjects_qa.txt
-subjectsInfoPath='../data/tbi_longitudinal_dtiQAPass_20210121.csv'
 
 ### parameters to the matching algorithm: assignmentCost can be one of the following <edgesIncludeDiagZeroDiag,edgesIgnoreDiag, edgesIncludeDiagRandDiag> 
 ### with the hardness of the problem to be solved in increasing order
@@ -31,8 +23,19 @@ pathType="-pathType direct" # could have been "-pathType shortestPath" or "-path
 
 # preprocessGraphs="-preprocessGraphs none"
 # preprocessGraphs="-preprocessGraphs logScaleEdgesStructure"
-# preprocessGraphs="-preprocessGraphs normalizeEdges"
-preprocessGraphs="-preprocessGraphs logScaleEdgesStructure_normalizeEdges"
+preprocessGraphs="-preprocessGraphs normalizeEdges"
+# preprocessGraphs="-preprocessGraphs logScaleEdgesStructure_normalizeEdges"
+
+
+### path to connectomes, list of samples to be used in the experiment, and cognitive scores of samples
+# connectomes=$experimentFolder/../data/connectomes2 # 200/203 ROIs instead of 220
+# connectomes=$experimentFolder/../data/connectomes_schaefer
+connectomes=$experimentFolder/../data/connectomes_desikan
+# samples=$experimentFolder/../data/desikan_filtered.txt
+samples=$experimentFolder/../data/desikan_male.txt
+# samples=$experimentFolder/../data/smallS.txt
+# samples=$experimentFolder/../data/subjects_qa.txt
+subjectsInfoPath='../data/tbi_longitudinal_dtiQAPass_20210121.csv'
 
 ### output path for the results and plots
 results=$experimentFolder/results
