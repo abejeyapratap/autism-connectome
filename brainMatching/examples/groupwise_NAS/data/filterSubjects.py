@@ -1,4 +1,7 @@
 # Script to take intersection of subject names from csv & connectomes directory
+    # Creates file of MISSING subject names
+# Creates Schaefer & Desikan FILTERED subject names
+
 import os
 
 files = []
