@@ -40,7 +40,7 @@ for i in range(numSubjects):
 
 # colors=['#351C4D', '#AB3E16','#849974','#2096BA','#F7DFD4','#F5AB99'] #nightfall, rust, fresh, shutter blue, macaron, tropical pink
 
-allPatientsPath = "../data/all_patients_ados.csv"
+allPatientsPath = "../data/ados/all_patients_ados.csv"
 allPatientsDf = pd.read_csv(allPatientsPath)
 similarity, ados = allPatientsDf['NNS'], allPatientsDf['ados_css']
 
