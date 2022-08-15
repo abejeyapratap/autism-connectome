@@ -89,10 +89,7 @@ if(analysisLevel=="group"):
             count=0
             for col in healthy:
                 if(row!=col):
-                    if(noSymmetry==True):
-                        scores_avg[row] += scores[row][col]
-                    else:
-                        scores_avg[row] += (scores[row][col]+scores[col][row])/2.0
+                    scores_avg[row] += (scores[row][col]+scores[col][row])/2.0
                     count+=1
             scores_avg[row] /= float(count)
     elif(relativeTo=="self"):
@@ -109,28 +106,9 @@ if(analysisLevel=="group"):
                         count+=1
                 scores_avg[row] /= float(count)
     scores=scores_avg
-elif(analysisLevel=="subject"):
-    if(measureType=='similarity'):
-        #6th line of result file contains similarity scores between structure and function for each subject, 
-        #i.e. similarity scores is a vector
-        scores=np.fromstring(fileContent[5],dtype=float,sep='\t') 
-    elif(measureType=='accuracy'):
-        #8th line until the end of file, contains the matching nodes for str vs function for each subject
-        #i.e., 8th line is the structure-function matching nodes of the first subject
-        matchings=np.array([np.fromstring(cont,dtype=int,sep='\t') for cont in fileContent[7:-1]])
-        
-        scores=np.zeros(len(matchings),dtype=float)
-        for i in range(len(matchings)):
-            for j in range(numNodes):
-                if(matchings[i][j]==j):
-                    scores[i]+=1
-        scores/=float(numNodes) 
-        scores*=100
 
-if(measureType=='similarity'):
-    scoreName='dissimilarity'
-elif(measureType=='accuracy'):
-    scoreName='matching accuracy (%)'
+
+scoreName='matching accuracy (%)'
     
 outputFile=open(outputFilePath,'w')
 outputFile.write("#numNodes,numSubjects\n%d\t%d\n" % (numNodes,numSubjects))
