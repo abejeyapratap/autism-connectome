@@ -21,7 +21,6 @@ analysisLevel=args['analysisLevel']
 relativeTo=args['relativeTo']
 noSymmetry=args['noSymmetry']
 
-##############load subject IDs for which we have a score#########################
 
 # load healthy & patient IDs from files
 tdcPath = "../data/tdc_schaefer.txt"
@@ -40,14 +39,43 @@ healthy = healthyOrder
 # print(healthyOrder[:])
 # quit()
 
-with open(subjectListPath,"r") as f:
-    subjectList =  f.read().splitlines()
-numScans=len(subjectList)
+# Load system-level mappings
+sysMapPath = "../data/yeo_7systems_schaefer.txt"
+with open(sysMapPath, "r") as f:
+    sysMaps = f.read().splitlines()
 
+visualOne = []
+somatomotorTwo = []
+dorsalThree = []
+ventralFour = []
+limbicFive = []
+frontoparietalSix = []
+defaultmodeSeven = []
+subcorticalEight = []
+allSys = [visualOne, somatomotorTwo, dorsalThree, ventralFour, limbicFive, frontoparietalSix, defaultmodeSeven, subcorticalEight]
+for index, mapping in enumerate(sysMaps):
+    if mapping == '1':
+        visualOne.append(index)
+    elif mapping == '2':
+        somatomotorTwo.append(index)
+    elif mapping == '3':
+        dorsalThree.append(index)
+    elif mapping == '4':
+        ventralFour.append(index)
+    elif mapping == '5':
+        limbicFive.append(index)
+    elif mapping == '6':
+        frontoparietalSix.append(index)
+    elif mapping == '7':
+        defaultmodeSeven.append(index)
+    elif mapping == '8':
+        subcorticalEight.append(index)
+sysNames = ["visual", "somatomotor", "dorsal", "ventral", "limbic", "frontoparietal", "defaultmode", "subcortical"]
 
-patientS1=[]
-patientS2=[]
-patientS3=[]
+""" print(sum([len(mapping) for mapping in allSys]))
+print(len(somatomotorTwo))
+print(subcorticalEight[:]) """
+
 
 ##############load results of the structure-function coupling experiment###################
 with open(resultFilePath,"r") as resultFile:
@@ -55,47 +83,51 @@ with open(resultFilePath,"r") as resultFile:
 numNodes = int(fileContent[3].split('\t')[0])
 numSubjects = int(fileContent[3].split('\t')[1])
 
-# print(numNodes, numSubjects)
-# quit()
 
 
 ###load similarity scores and the matchings
-if(measureType=='accuracy'):
-    #starting from 6+numSubjects line, read until the end of the file for matching nodes between subject pairs
-    matchings=np.array([np.fromstring(cont,dtype=int,sep='\t') for cont in fileContent[6+numSubjects:-1]])
+matchings=np.array([np.fromstring(cont,dtype=int,sep='\t') for cont in fileContent[6+numSubjects:-1]])
+
+# For each sub-system, calculate average NNS relative to healthy & save
+for ind, system in enumerate(allSys):
+    # create NxN pairwise-matching score matrix
     scores=np.zeros((numSubjects,numSubjects),dtype=float)
     for i in range(len(matchings)):
-        row=matchings[i][0] #first colulmn is the order number of the first subject
-        col=matchings[i][1] #second colulmn is the order number of the second subject
-        for j in range(numNodes):
+        row=matchings[i][0] #first column is the order number of the first subject
+        col=matchings[i][1] #second column is the order number of the second subject
+
+        for j in system:
             if(matchings[i][2+j]==j):
                 scores[row][col]+=1
-    scores/=float(numNodes)
+        # print(scores[row][col])
+
+    scores/=float(len(system))
     scores*=100
 
-### now, calculate average matching/similarity scores relative to healthy controls
-### NOTE: we are discarding the matching of a healthy control subject to itself in 
-###       calculation of each subjec't average score relative to healthy controls
-scores_avg = np.zeros(len(scores))
-if(relativeTo=="healthy"):
-    for row in range(numSubjects):
-        count=0
-        for col in healthy:
-            if(row!=col):
-                scores_avg[row] += (scores[row][col]+scores[col][row])/2.0
-                count+=1
-        scores_avg[row] /= float(count)
+    ### calculate average matching/similarity scores relative to healthy controls
+    ### NOTE: we are discarding the matching of a healthy control subject to itself in 
+    ###       calculation of each subject average score relative to healthy controls
+    scores_avg = np.zeros(len(scores))
+    if(relativeTo=="healthy"):
+        for row in range(numSubjects):
+            count=0
+            for col in healthy:
+                if(row!=col):
+                    scores_avg[row] += (scores[row][col]+scores[col][row])/2.0
+                    count+=1
+            scores_avg[row] /= float(count)
 
-scores=scores_avg
+    scores=scores_avg
 
 
-scoreName='matching accuracy (%)'
+    scoreName='matching accuracy (%)'
     
-outputFile=open(outputFilePath,'w')
-outputFile.write("#numNodes,numSubjects\n%d\t%d\n" % (numNodes,numSubjects))
-outputFile.write("#measureType\n"+measureType+"\n")
-outputFile.write("#scoreName\n"+scoreName+"\n")
-outputFile.write("#scores\n")
-for i in range(len(scores)):
-    outputFile.write("%0.4f\t" % scores[i])
-outputFile.close()
+    outputPath = "../experiment/results/sys_level"
+    outputFile=open(f"{outputPath}/{sysNames[ind]}.res",'w')
+    outputFile.write("#numNodes,numSubjects\n%d\t%d\n" % (numNodes,numSubjects))
+    outputFile.write("#measureType\n"+measureType+"\n")
+    outputFile.write("#scoreName\n"+scoreName+"\n")
+    outputFile.write("#scores\n")
+    for i in range(len(scores)):
+        outputFile.write("%0.4f\t" % scores[i])
+    outputFile.close()

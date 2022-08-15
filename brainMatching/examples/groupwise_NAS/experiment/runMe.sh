@@ -51,7 +51,7 @@ if( [ "$job" == "expRun" ] || [ "$job" == "complete" ] );then
 	$brainMatch -experiment groupwise match -groups all all -data matrix 1 -dti $connectomes/ -samples $samples -printMatches -printSimilarity -modality str_str -outputPath $results/matching_raw $pathType $assignmentCost $preprocessGraphs
 fi
 
-########### connectome level analysis ##############
+########### system & connectome level analysis ##############
 sysFileAccuracy=$results/NNS_sys_rt_healthy.res
 sysResults_py=$scriptFolderPath/processSystems.py
 if( [ "$job" == "sysProc" ] || [ "$job" == "complete" ] );then
@@ -65,6 +65,19 @@ if( [ "$job" == "expProc" ] || [ "$job" == "complete" ] );then
 	echo -e "\tProcessing raw experiment results..."
 
 	python3 $processResults_py -r $results/"matching_raw_0.res" -o $resultFileAccuracy -s $samples -mt accuracy -al group --relativeTo healthy
+fi
+
+########### group difference calcs ##############
+sysDifference_similarity_py=$scriptFolderPath/groupDiff_system.py
+if( [ "$job" == "sysDiff" ] || [ "$job" == "complete" ] );then
+	echo -e "\tSystem-level group difference and generating "$plotType" plots..."
+	outpath=$plotsRoot/groupDifference
+	# mkdir -p $outpath/histograms
+
+	plotType=box #box or violin
+
+	python3 $sysDifference_similarity_py -r $resultFileAccuracy -o $outpath/ -s $samples --scoreType dist  --plotExtension $plotExtension --plotType $plotType --timePoints any
+	# python3 $sysDifference_similarity_py -r $resultFileAccuracy -o $outpath/ -s $samples --scoreType dist  --plotExtension $plotExtension --plotType $plotType --timePoints any --noHealthyPlot
 fi
 
 if( [ "$job" == "grpDiff" ] || [ "$job" == "complete" ] );then
