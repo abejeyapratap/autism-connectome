@@ -28,14 +28,14 @@ preprocessGraphs="-preprocessGraphs normalizeEdges"
 
 
 ### path to connectomes, list of samples to be used in the experiment, and cognitive scores of samples
-# connectomes=$experimentFolder/../data/connectomes2 # 200/203 ROIs instead of 220
-connectomes=$experimentFolder/../data/connectomes_schaefer
+connectomes=$experimentFolder/../data/connectomes_schaefer_200 ## 200/202 ROIs instead of 220
+# connectomes=$experimentFolder/../data/connectomes_schaefer
 samples=$experimentFolder/../data/schaefer_filtered.txt
 # samples=$experimentFolder/../data/schaefer_male.txt
+# samples=$experimentFolder/../data/smallS.txt
 # connectomes=$experimentFolder/../data/connectomes_desikan
 # samples=$experimentFolder/../data/desikan_filtered.txt
 # samples=$experimentFolder/../data/desikan_male.txt
-# samples=$experimentFolder/../data/smallS.txt
 # samples=$experimentFolder/../data/subjects_qa.txt
 subjectsInfoPath='../data/tbi_longitudinal_dtiQAPass_20210121.csv'
 

@@ -4,7 +4,7 @@
 plotExtension=png #png or svg
 
 ###run experiments
-./runMe.sh expRun
+# ./runMe.sh expRun
 
 ##process connectomes
 ./runMe.sh expProc
