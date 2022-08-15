@@ -1,3 +1,5 @@
+# Script to filter 220x220 connectomes to 200x200 or 202x202
+# commented out code can delete unnecessary connectome files
 import os
 import numpy as np
 
