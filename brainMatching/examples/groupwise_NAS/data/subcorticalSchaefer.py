@@ -2,8 +2,8 @@ import os
 import numpy as np
 
 OLD = "./connectomes_schaefer"
-# DIR = "./connectomes_new_schaefer"
-DIR = "./connectomes2"
+# DIR = "./connectomes_schaefer_200"
+DIR = "./connectomes_schaefer_202"
 
 files = []
 with open("schaefer_filtered.txt", "r") as f:
@@ -19,9 +19,10 @@ for filename in os.listdir(OLD):
 
     with open(f"{DIR}/{filename}", "w") as f:
         for i in range(200):
-            temp = connectome[i][:200] + connectome[i][218:]
+            temp = connectome[i][:200] + connectome[i][218:] # part after '+' is for Schaefer202
             f.write(" ".join(temp) + "\n")
         
+        # for Schaefer202 - comment out!
         for i in range(218, 220):
             temp = connectome[i][:200] + connectome[i][218:]
             f.write(" ".join(temp) + "\n")

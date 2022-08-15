@@ -23,7 +23,7 @@ for i, _ in enumerate(sFiles):
 # print(count)
 
 # Sanity check to see if Schaefer connectomes were filtered properly
-""" for file in os.listdir("./connectomes_new_schaefer"):
+""" for file in os.listdir("./connectomes_schaefer_200"):
     with open(f"./connectomes_new_schaefer/{file}") as f:
         temp = f.read().splitlines()
         if len(temp) != 200 or len(temp[0].split()) != 200:
@@ -31,10 +31,10 @@ for i, _ in enumerate(sFiles):
             # print(len(temp), len(temp[0]))
             break """
 
-""" for file in os.listdir("./connectomes2"):
+for file in os.listdir("./connectomes_schaefer_202"):
     with open(f"./connectomes2/{file}") as f:
         temp = f.read().splitlines()
         if len(temp) != 202 or len(temp[0].split()) != 202:
             print(file)
             print(len(temp), len(temp[0]))
-            break """
+            break
