@@ -39,8 +39,8 @@ for i in range(numSubjects):
     scores[i] = float(fileContent[7].split('\t')[i]) """
 
 
-# path = "../data/ados/all_patients_ados.csv"
-path = "../data/ados/g6_schaefer_ados.csv"
+path = "../data/ados/schaefer_all_ados.csv"
+# path = "../data/ados/g6_schaefer_ados.csv"
 patientsDf = pd.read_csv(path)
 similarity, ados = patientsDf['NNS'], patientsDf['ados_css']
 
@@ -50,7 +50,7 @@ r_spearman, p_spearman = stt.spearmanr(similarity, ados)
 
 # save Scatter Plot
 outputFolder = "../experiment/plots/correl/"
-outputPath=outputFolder+"g6_schaefer.png"
+outputPath=outputFolder+"schaefer_all.png"
 
 plot=drawCorrelationPlot(similarity, ados, r_pearson, p_pearson, "NNS","ADOS","", outputPath)
 plot.close()
