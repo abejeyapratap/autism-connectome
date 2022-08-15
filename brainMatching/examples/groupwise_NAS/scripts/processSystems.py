@@ -26,12 +26,6 @@ noSymmetry=args['noSymmetry']
 # load healthy & patient IDs from files
 tdcPath = "../data/tdc_schaefer.txt"
 asdPath = "../data/asd_schaefer.txt"
-# tdcPath = "../data/tdc_schaefer_male.txt"
-# asdPath = "../data/asd_schaefer_male.txt"
-# tdcPath = "../data/tdc_desikan.txt"
-# asdPath = "../data/asd_desikan.txt"
-# tdcPath = "../data/tdc_desikan_male.txt"
-# asdPath = "../data/asd_desikan_male.txt"
 
 with open(tdcPath, "r") as f:
     healthyIDs = f.read().splitlines()
@@ -66,46 +60,33 @@ numSubjects = int(fileContent[3].split('\t')[1])
 
 
 ###load similarity scores and the matchings
-if(analysisLevel=="group"):
-    if(measureType=='accuracy'):
-        #starting from 6+numSubjects line, read until the end of the file for matching nodes between subject pairs
-        matchings=np.array([np.fromstring(cont,dtype=int,sep='\t') for cont in fileContent[6+numSubjects:-1]])
-        scores=np.zeros((numSubjects,numSubjects),dtype=float)
-        for i in range(len(matchings)):
-            row=matchings[i][0] #first colulmn is the order number of the first subject
-            col=matchings[i][1] #second colulmn is the order number of the second subject
-            for j in range(numNodes):
-                if(matchings[i][2+j]==j):
-                    scores[row][col]+=1
-        scores/=float(numNodes)
-        scores*=100
-    
-    ### now, calculate average matching/similarity scores relative to healthy controls
-    ### NOTE: we are discarding the matching of a healthy control subject to itself in 
-    ###       calculation of each subjec't average score relative to healthy controls
-    scores_avg = np.zeros(len(scores))
-    if(relativeTo=="healthy"):
-        for row in range(numSubjects):
-            count=0
-            for col in healthy:
-                if(row!=col):
-                    scores_avg[row] += (scores[row][col]+scores[col][row])/2.0
-                    count+=1
-            scores_avg[row] /= float(count)
-    elif(relativeTo=="self"):
-        groups=[healthyOrder,patientS1,patientS2,patientS3]
-        for group in groups:
-            for row in group:
-                count = 0;
-                for col in group:
-                    if(row!=col):
-                        if(noSymmetry==True):
-                            scores_avg[row] += scores[row][col]
-                        else:
-                            scores_avg[row] += (scores[row][col]+scores[col][row])/2.0
-                        count+=1
-                scores_avg[row] /= float(count)
-    scores=scores_avg
+if(measureType=='accuracy'):
+    #starting from 6+numSubjects line, read until the end of the file for matching nodes between subject pairs
+    matchings=np.array([np.fromstring(cont,dtype=int,sep='\t') for cont in fileContent[6+numSubjects:-1]])
+    scores=np.zeros((numSubjects,numSubjects),dtype=float)
+    for i in range(len(matchings)):
+        row=matchings[i][0] #first colulmn is the order number of the first subject
+        col=matchings[i][1] #second colulmn is the order number of the second subject
+        for j in range(numNodes):
+            if(matchings[i][2+j]==j):
+                scores[row][col]+=1
+    scores/=float(numNodes)
+    scores*=100
+
+### now, calculate average matching/similarity scores relative to healthy controls
+### NOTE: we are discarding the matching of a healthy control subject to itself in 
+###       calculation of each subjec't average score relative to healthy controls
+scores_avg = np.zeros(len(scores))
+if(relativeTo=="healthy"):
+    for row in range(numSubjects):
+        count=0
+        for col in healthy:
+            if(row!=col):
+                scores_avg[row] += (scores[row][col]+scores[col][row])/2.0
+                count+=1
+        scores_avg[row] /= float(count)
+
+scores=scores_avg
 
 
 scoreName='matching accuracy (%)'

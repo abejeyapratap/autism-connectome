@@ -52,6 +52,14 @@ if( [ "$job" == "expRun" ] || [ "$job" == "complete" ] );then
 fi
 
 ########### connectome level analysis ##############
+sysFileAccuracy=$results/NNS_sys_rt_healthy.res
+sysResults_py=$scriptFolderPath/processSystems.py
+if( [ "$job" == "sysProc" ] || [ "$job" == "complete" ] );then
+	echo -e "\tSystem-level processing raw experiment results..."
+
+	python3 $sysResults_py -r $results/"matching_raw_0.res" -o $sysFileAccuracy -s $samples -mt accuracy -al group --relativeTo healthy
+fi
+
 resultFileAccuracy=$results/NAS_rt_healthy.res
 if( [ "$job" == "expProc" ] || [ "$job" == "complete" ] );then
 	echo -e "\tProcessing raw experiment results..."

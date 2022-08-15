@@ -6,11 +6,14 @@ plotExtension=png #png or svg
 ###run experiments
 # ./runMe.sh expRun
 
-##process connectomes
-./runMe.sh expProc
+##process connectomes at connectome-level
+# ./runMe.sh expProc
+
+##process connectomes at Yeo system-level
+./runMe.sh sysProc
 
 ## connectome level group difference (-- aka boxplot)
-./runMe.sh grpDiff $plotExtension
+# ./runMe.sh grpDiff $plotExtension
 
 ## linear mixed effects model for calculating change of NAS with days since injury -- (done to calc correl)
 # ./runMe.sh mixedModel_time $plotExtension
