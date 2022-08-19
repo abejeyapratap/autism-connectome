@@ -32,6 +32,8 @@
 *.app
 
 .DS_Store
+__pycache__/
+*.pyc
 
 # Connectome data files
 connectomes*
