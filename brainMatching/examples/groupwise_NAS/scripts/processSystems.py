@@ -83,7 +83,9 @@ with open(resultFilePath,"r") as resultFile:
 numNodes = int(fileContent[3].split('\t')[0])
 numSubjects = int(fileContent[3].split('\t')[1])
 
-
+""" allSys = [frontoparietalSix]
+print(len(allSys[0]))
+print(allSys[0]) """
 
 ###load similarity scores and the matchings
 matchings=np.array([np.fromstring(cont,dtype=int,sep='\t') for cont in fileContent[6+numSubjects:-1]])
@@ -99,7 +101,9 @@ for ind, system in enumerate(allSys):
         for j in system:
             if(matchings[i][2+j]==j):
                 scores[row][col]+=1
-        # print(scores[row][col])
+        """ print(scores[row][col])
+        print(scores[row][col]/len(system) * 100)
+        quit() """
 
     scores/=float(len(system))
     scores*=100
