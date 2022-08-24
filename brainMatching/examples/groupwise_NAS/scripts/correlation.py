@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import scipy.stats as stt
-from helpers import drawCorrelationPlot, drawBoxPlot
+from helpers import drawCorrelationPlot, drawBoxPlot, calculateGroupDifference
 import argparse
 
 parser = argparse.ArgumentParser(description='Calculate correlations between NNS and ADOS/SCQ')
@@ -110,10 +110,9 @@ g4 = df[(df['NNS'] >= median) & (df['NNS'] < q3)]
 # median & up
 g6 = df[df['NNS'] >= median]
 
-
+# Calculate and plot correlations for sub-groups
 groupNames = ["g1", "g2", "g3_quartile1", "c5_quartile3", "g6_median", "c4_lowwhisker", "g4_median_q3", "all_patients"]
 allGroups = [g1, g2, g3, c5, g6, c4, g4, df]
-
 for ind, patientsDf in enumerate(allGroups):
     nns, ados = patientsDf['NNS'], patientsDf['ados_css']
 
@@ -125,6 +124,27 @@ for ind, patientsDf in enumerate(allGroups):
         outputFile = f"{outputPath}/{groupNames[ind]}.png"
         plot=drawCorrelationPlot(nns, ados, r_pearson, p_pearson, "NNS","ADOS","", outputFile)
         plot.close()
+    elif p_spearman < 0.05:
+        outputFile = f"{outputPath}/spearman_{groupNames[ind]}.png"
+        plot=drawCorrelationPlot(nns, ados, r_spearman, p_spearman, "NNS","ADOS","", outputFile)
+        plot.close()
+
+### Group Difference between NNS of low ADOS vs high ADOS patients
+# see if NNS scores of ADOS <=5 is sig diff from ADOS >5
+lowAdos = df[df['ados_css'] <= 5]
+highAdos = df[df['ados_css'] > 5]
+
+print(calculateGroupDifference(lowAdos['NNS'], highAdos['NNS'], parametric=False, paired=False)) # significant
+print(calculateGroupDifference(lowAdos['NNS'], highAdos['NNS'], parametric=True, paired=False))
+
+dat = [lowAdos['NNS'].tolist(), highAdos['NNS'].tolist()]
+lab = ['<=5', '>5']
+minY=min([min(l) for l in dat])
+maxY=max([max(l) for l in dat])
+offset=(maxY-minY)/5.0
+yLim=[minY-offset/2.0,maxY+offset]
+colors=['#351C4D', '#AB3E16','#849974','#2096BA','#F7DFD4','#F5AB99']
+drawBoxPlot(dat,lab,"",f"{outputPath}/NNS_box.png",xLabel='',yLabel="NNS", colors=colors, rotation=0,plotScatter=True,yLim=yLim,middleLine='median')
 
 """ 
 tdcPath = "../data/tdc_desikan.txt"
