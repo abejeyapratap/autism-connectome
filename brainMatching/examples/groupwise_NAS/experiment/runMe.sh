@@ -26,18 +26,21 @@ preprocessGraphs="-preprocessGraphs normalizeEdges"
 # preprocessGraphs="-preprocessGraphs logScaleEdgesStructure"
 # preprocessGraphs="-preprocessGraphs logScaleEdgesStructure_normalizeEdges"
 
+connectomeName="schaefer"
+
 
 ### path to connectomes, list of samples to be used in the experiment, and cognitive scores of samples
-# connectomes=$experimentFolder/../data/connectomes_schaefer_200 ## 200/202 ROIs instead of 220
-connectomes=$experimentFolder/../data/connectomes_schaefer
-samples=$experimentFolder/../data/schaefer_filtered.txt
-# samples=$experimentFolder/../data/schaefer_male.txt
-# samples=$experimentFolder/../data/smallS.txt
+# samples=$experimentFolder/../data/subjects_qa.txt
 # connectomes=$experimentFolder/../data/connectomes_desikan
 # samples=$experimentFolder/../data/desikan_filtered.txt
 # samples=$experimentFolder/../data/desikan_male.txt
-# samples=$experimentFolder/../data/subjects_qa.txt
-subjectsInfoPath='../data/tbi_longitudinal_dtiQAPass_20210121.csv'
+# connectomes=$experimentFolder/../data/connectomes_schaefer_200 ## 200/202 ROIs instead of 220
+# samples=$experimentFolder/../data/schaefer_male.txt
+# samples=$experimentFolder/../data/smallS.txt
+connectomes=$experimentFolder/../data/connectomes_schaefer
+samples=$experimentFolder/../data/schaefer_filtered.txt
+# subjectsInfoPath='../data/tbi_longitudinal_dtiQAPass_20210121.csv'
+subjectsInfoPath='../data/tobacco_demographics.csv'
 
 ### output path for the results and plots
 results=$experimentFolder/results
@@ -52,7 +55,7 @@ if( [ "$job" == "expRun" ] || [ "$job" == "complete" ] );then
 fi
 
 ########### system & connectome level analysis ##############
-sysFileAccuracy=$results/NNS_sys_rt_healthy.res
+sysFileAccuracy=$results/NNS_sys_rt_healthy.res ## DELETE
 sysResults_py=$scriptFolderPath/processSystems.py
 if( [ "$job" == "sysProc" ] || [ "$job" == "complete" ] );then
 	echo -e "\tSystem-level processing raw experiment results..."
@@ -91,6 +94,19 @@ if( [ "$job" == "grpDiff" ] || [ "$job" == "complete" ] );then
 	python3 $groupDifference_similarity_py -r $resultFileAccuracy -o $outpath/ -s $samples --scoreType dist  --plotExtension $plotExtension --plotType $plotType --timePoints any --noHealthyPlot
 fi
 
+correl_py=$scriptFolderPath/correlation.py
+if( [ "$job" == "correl" ] );then
+	echo -e "\tCalculating correlations..."
+	correlOut=$plotsRoot/correl
+	mkdir -p $correlOut
+	correlConnectome=$correlOut/$connectomeName
+	mkdir -p $correlConnectome
+
+	python3 $correl_py --subjectsInfoPath $subjectsInfoPath -r $resultFileAccuracy -o $correlConnectome
+fi
+
+
+##### Linear model ##### 
 if( [ "$job" == "mixedModel_time" ] || [ "$job" == "complete" ] );then
 	echo -e "\tCalculating mixed effects model for predicting similarity score from DSI..."
 	#generate scores file where cognitive socres and matching accuracy scores are listed for each subject
