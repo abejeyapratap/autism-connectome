@@ -1,0 +1,13 @@
+============== Dataset statistics ==============
+	Healthy	 numSubjects:150	median:69.063	mean:68.043	var:56.814	std:7.538 
+	Patients	 numSubjects:163	median:68.615	mean:67.205	var:77.836	std:8.822 
+============== F/Barlett/Levene Test for checking equalness of variance of patients relative to healthy controls ==============
+Discard outliers:True
+	Healthy vs Patients	 F-test:0.919647	Bartlett:0.160521	Levene:0.257835 
+Discard outliers:False
+	Healthy vs Patients	 F-test:0.025736	Bartlett:0.051600	Levene:0.555064 
+============== Group Difference: any accuracy  dist score==============
+============== Parametric test (with Cohen's D) ==============
+	TDC vs ASD	:	0.10 (0.370833 -- 0.370833) 
+============== Non-parametric test (Wilcoxon Signed-rank (if paired) test or Mann-Whitney U test (if not paired) for repeated measures with non normal distribution) ==============
+	TDC vs ASD	:	0.04 (0.522504 -- 0.522504) 

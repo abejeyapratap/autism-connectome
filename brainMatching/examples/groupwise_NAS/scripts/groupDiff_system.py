@@ -162,6 +162,6 @@ for ind, system in enumerate(sysNames):
     # yLim=[67,102] ## use these lines to make the space constant (such as across different plots)
     scoreName="network similarity (%)"
     if plotType=="box":
-        drawBoxPlot(data,dataLabels,title,outputPath,xLabel='',yLabel=scoreName,colors=colors,rotation=0,plotScatter=True,yLim=yLim,middleLine='median') #since we use Mann-Whitney U test for group dofference, we should plot median line in boxplots
+        drawBoxPlot(data,dataLabels,title,outputPath,xLabel='',yLabel=scoreName,colors=colors,rotation=0,plotScatter=True,yLim=yLim,middleLine='mean') #since we use Mann-Whitney U test for group dofference, we should plot median line in boxplots
     elif plotType=="violin":
         drawViolinPlot(data,dataLabels,title,outputPath,xLabel='',yLabel=scoreName,colors=colors,rotation=0,yLim=yLim)
