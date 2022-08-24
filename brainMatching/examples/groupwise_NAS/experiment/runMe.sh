@@ -96,13 +96,24 @@ fi
 
 correl_py=$scriptFolderPath/correlation.py
 if( [ "$job" == "correl" ] );then
-	echo -e "\tCalculating correlations..."
+	echo -e "\tCalculating correlations at connectome-level..."
 	correlOut=$plotsRoot/correl
 	mkdir -p $correlOut
 	correlConnectome=$correlOut/$connectomeName
 	mkdir -p $correlConnectome
 
 	python3 $correl_py --subjectsInfoPath $subjectsInfoPath -r $resultFileAccuracy -o $correlConnectome
+fi
+
+correlSys_py=$scriptFolderPath/correlationSystem.py
+if( [ "$job" == "correlSys" ] );then
+	echo -e "\tCalculating correlations at system-level..."
+	correlOut=$plotsRoot/correl
+	correlConnectome=$correlOut/$connectomeName/sys_level
+	mkdir -p $correlConnectome
+	resPaths=$results/sys_level
+
+	python3 $correlSys_py --subjectsInfoPath $subjectsInfoPath -r $resPaths -o $correlConnectome
 fi
 
 

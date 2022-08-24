@@ -110,6 +110,9 @@ g4 = df[(df['NNS'] >= median) & (df['NNS'] < q3)]
 # median & up
 g6 = df[df['NNS'] >= median]
 
+reportFile=open(f"{outputPath}/stats.txt",'w')
+reportFile.write("============== Significant Correlations ==============\n")
+
 # Calculate and plot correlations for sub-groups
 groupNames = ["g1", "g2", "g3_quartile1", "c5_quartile3", "g6_median", "c4_lowwhisker", "g4_median_q3", "all_patients"]
 allGroups = [g1, g2, g3, c5, g6, c4, g4, df]
@@ -120,22 +123,34 @@ for ind, patientsDf in enumerate(allGroups):
     r_pearson, p_pearson = stt.pearsonr(nns, ados)
     r_spearman, p_spearman = stt.spearmanr(nns, ados)
 
-    if p_pearson < 0.05:
+    if p_pearson <= 0.05:
+        reportFile.write(f"\t {groupNames[ind]}\t Pearson r-value:{r_pearson:.3f}\t p-value:{p_pearson:.5f}\n")
         outputFile = f"{outputPath}/{groupNames[ind]}.png"
         plot=drawCorrelationPlot(nns, ados, r_pearson, p_pearson, "NNS","ADOS","", outputFile)
         plot.close()
-    elif p_spearman < 0.05:
+    elif p_spearman <= 0.05:
+        reportFile.write(f"\t {groupNames[ind]}\t Spearman r-value:{r_spearman:.3f}\t p-value:{p_spearman:.5f}\n")
         outputFile = f"{outputPath}/spearman_{groupNames[ind]}.png"
         plot=drawCorrelationPlot(nns, ados, r_spearman, p_spearman, "NNS","ADOS","", outputFile)
         plot.close()
 
 ### Group Difference between NNS of low ADOS vs high ADOS patients
+reportFile.write("\n============== Group Difference between NNS of low ADOS vs high ADOS patients ==============\n")
 # see if NNS scores of ADOS <=5 is sig diff from ADOS >5
 lowAdos = df[df['ados_css'] <= 5]
 highAdos = df[df['ados_css'] > 5]
 
-print(calculateGroupDifference(lowAdos['NNS'], highAdos['NNS'], parametric=False, paired=False)) # significant
-print(calculateGroupDifference(lowAdos['NNS'], highAdos['NNS'], parametric=True, paired=False))
+paramDiff = calculateGroupDifference(lowAdos['NNS'], highAdos['NNS'], parametric=False, paired=False) # significant
+nonparamDiff = calculateGroupDifference(lowAdos['NNS'], highAdos['NNS'], parametric=True, paired=False)
+
+reportFile.write("============== Parametric test (with Cohen's D) ==============\n")
+if paramDiff[1] <= 0.05:
+    reportFile.write("***")
+reportFile.write(f"\t Effect Size:{paramDiff[0]:.3f}\t p-value:{paramDiff[1]:.5f}\n")
+reportFile.write("============== Non-parametric test (Mann-Whitney U test (not paired) for repeated measures with non normal distribution) ==============\n")
+if nonparamDiff[1] <= 0.05:
+    reportFile.write("***")
+reportFile.write(f"\t Effect Size:{nonparamDiff[0]:.3f}\t p-value:{nonparamDiff[1]:.5f}\n")
 
 dat = [lowAdos['NNS'].tolist(), highAdos['NNS'].tolist()]
 lab = ['<=5', '>5']
@@ -145,6 +160,8 @@ offset=(maxY-minY)/5.0
 yLim=[minY-offset/2.0,maxY+offset]
 colors=['#351C4D', '#AB3E16','#849974','#2096BA','#F7DFD4','#F5AB99']
 drawBoxPlot(dat,lab,"",f"{outputPath}/NNS_box.png",xLabel='',yLabel="NNS", colors=colors, rotation=0,plotScatter=True,yLim=yLim,middleLine='median')
+
+reportFile.close()
 
 """ 
 tdcPath = "../data/tdc_desikan.txt"
