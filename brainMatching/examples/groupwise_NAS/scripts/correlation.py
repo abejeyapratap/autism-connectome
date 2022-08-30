@@ -3,17 +3,31 @@ import numpy as np
 import scipy.stats as stt
 from helpers import drawCorrelationPlot, drawBoxPlot, calculateGroupDifference
 import argparse
+import os
 
 parser = argparse.ArgumentParser(description='Calculate correlations between NNS and ADOS/SCQ')
 parser.add_argument('-sip','--subjectsInfoPath', help='path to the file that contains path to the connectomes', required=True)
 parser.add_argument('-r','--resultFile', help='file path to the results of the matching experiment', required=True)
 parser.add_argument('-o','--outputFile', help='file path to save the distribution of values for the two populations', required=True)
+parser.add_argument('--ados', help='ADOS or SCQ score', default=False, action="store_true")
+parser.add_argument('--no-ados', dest='ados', action="store_false")
 
 args = vars(parser.parse_args())
 subjectsInfoPath=args['subjectsInfoPath']
 resultFilePath=args['resultFile']
 outputPath=args['outputFile']
+isAdos = args['ados']
 
+# Create ADOS/SCQ output directory
+if isAdos:
+    outputPath = f"{outputPath}/ados"
+    if not os.path.exists(outputPath):
+        os.mkdir(outputPath)
+else:
+    outputPath = f"{outputPath}/scq"
+    if not os.path.exists(outputPath):
+        os.mkdir(outputPath)
+quit()
 # Load Tobacco data & processed NNS Scores
 df = pd.read_csv(subjectsInfoPath)
 """ print(df['ados_css'].isna().sum(), df['ados_css'].size)
@@ -90,25 +104,14 @@ highWhisker = q3 + (1.5*iqr)
 # Group 1 - all outliers
 g1 = df[df['NNS'] < lowWhisker]
 # print(g1.shape, stt.pearsonr(g1['NNS'], g1['ados_css']))
-
-# low whisker to 1st quartile
-g2 = df[(df['NNS'] >= lowWhisker) & (df['NNS'] < q1)]
-
-# 1st quartile to rest
-g3 = df[df['NNS'] >= q1]
+g2 = df[(df['NNS'] >= lowWhisker) & (df['NNS'] < q1)] # low whisker to 1st quartile
+g3 = df[df['NNS'] >= q1] # 1st quartile to rest
 
 ### other sub-groups
-# Low whisker & up
-c4 = df[df['NNS'] >= lowWhisker]
-
-# Quartile 3 & up
-c5 = df[(df['NNS'] >= q3) & (df['NNS'] < highWhisker)]
-
-# b/w median & Q3
-g4 = df[(df['NNS'] >= median) & (df['NNS'] < q3)]
-
-# median & up
-g6 = df[df['NNS'] >= median]
+c4 = df[df['NNS'] >= lowWhisker] # Low whisker & up
+c5 = df[(df['NNS'] >= q3) & (df['NNS'] < highWhisker)] # Quartile 3 & up
+g4 = df[(df['NNS'] >= median) & (df['NNS'] < q3)] # b/w median & Q3
+g6 = df[df['NNS'] >= median] # median & up
 
 reportFile=open(f"{outputPath}/stats.txt",'w')
 reportFile.write("============== Significant Correlations ==============\n")
@@ -163,6 +166,7 @@ drawBoxPlot(dat,lab,"",f"{outputPath}/NNS_box.png",xLabel='',yLabel="NNS", color
 
 reportFile.close()
 
+# Old code
 """ 
 tdcPath = "../data/tdc_desikan.txt"
 asdPath = "../data/asd_desikan.txt"
