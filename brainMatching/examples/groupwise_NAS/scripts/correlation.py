@@ -27,7 +27,7 @@ else:
     outputPath = f"{outputPath}/scq"
     if not os.path.exists(outputPath):
         os.mkdir(outputPath)
-quit()
+
 # Load Tobacco data & processed NNS Scores
 df = pd.read_csv(subjectsInfoPath)
 """ print(df['ados_css'].isna().sum(), df['ados_css'].size)
@@ -51,56 +51,94 @@ print(scores) """
 filtered = df[['Subject', 'DX', 'ados_css', 'scq_total']]
 # print(filtered.head())
 
-# match patients with corresponding ADOS score
-patients = []
-fullP = []
-ados = []
-for i, val in enumerate(filtered['DX']):
-  if val == 'ASD':
-    patients.append(filtered['Subject'][i])
-    fullP.append(f"{filtered['Subject'][i]}_DTI_Schaefer2018_200_7Networks_connmat_sift2")
-    adosScore = filtered['ados_css'][i]
-    if np.isnan(adosScore):
-      ados.append(None)
-    else:
-      ados.append(adosScore)
-""" print(sum([x is None for x in ados]))
-print(len(patients), len(ados)) # 176 """
-
 # Eliminate missing subjects
 with open('../data/missing.txt', 'r') as f:
   missingSubs = f.read().splitlines()
 
-# remove missing patients & ADOS
-filteredP = []
-filteredAdos = []
-
-for i, p in enumerate(fullP):
-  if p not in missingSubs:
-    filteredP.append(patients[i])
-    filteredAdos.append(ados[i])
-""" print(len(filteredP), len(ados), len(filteredAdos))
-print(sum([x is None for x in ados])) """
-
-# Create DataFrame with Patients, NNS, ADOS
-data = {'Subject':  filteredP, 'NNS': patientScores, 'ados_css': filteredAdos}
-newDf = pd.DataFrame(data)
-""" print(newDf.shape, len(patientScores))
-print(newDf[newDf['ados_css'].isnull()]) # check NaN ADOS vals
-# print(newDf.head()) """
-
-df = newDf[newDf['ados_css'].notna()]
-# print(df.shape, df['NNS'].describe())
-
 ### Split into sub-groups (3 or 5)
-# delimiting boundaries
-q1, q3 = np.percentile(df['NNS'], 25), np.percentile(df['NNS'], 75)
+# delimiting boundaries - based on ALL NNS scores (not just ados-filtered ones, like I was doing before)
+q1, q3 = np.percentile(patientScores, 25), np.percentile(patientScores, 75)
 iqr = q3-q1
-median = np.percentile(df['NNS'], 50)
+median = np.percentile(patientScores, 50)
 lowWhisker = q1 - (1.5*iqr)
 highWhisker = q3 + (1.5*iqr)
 # print(q1, q3, iqr, lowWhisker, highWhisker)
 
+if isAdos:
+    # match patients with corresponding ADOS score
+    patients = []
+    fullP = []
+    ados = []
+    for i, val in enumerate(filtered['DX']):
+        if val == 'ASD':
+            patients.append(filtered['Subject'][i])
+            fullP.append(f"{filtered['Subject'][i]}_DTI_Schaefer2018_200_7Networks_connmat_sift2")
+            adosScore = filtered['ados_css'][i]
+            if np.isnan(adosScore):
+                ados.append(None)
+            else:
+                ados.append(adosScore)
+    """ print(sum([x is None for x in ados]))
+    print(len(patients), len(ados)) # 176 """
+
+    # remove missing patients & ADOS
+    filteredP = []
+    filteredAdos = []
+
+    for i, p in enumerate(fullP):
+        if p not in missingSubs:
+            filteredP.append(patients[i])
+            filteredAdos.append(ados[i])
+    """ print(len(filteredP), len(ados), len(filteredAdos))
+    print(sum([x is None for x in ados])) """
+
+    # Create DataFrame with Patients, NNS, ADOS
+    data = {'Subject':  filteredP, 'NNS': patientScores, 'ados_css': filteredAdos}
+    newDf = pd.DataFrame(data)
+    """ print(newDf.shape, len(patientScores))
+    print(newDf[newDf['ados_css'].isnull()]) # check NaN ADOS vals
+    # print(newDf.head()) """
+
+    df = newDf[newDf['ados_css'].notna()]
+    # print(df.shape, df['NNS'].describe())
+else:
+    patients = []
+    fullP = []
+    scq = []
+    for i, val in enumerate(filtered['DX']):
+        if val == 'ASD':
+            patients.append(filtered['Subject'][i])
+            fullP.append(f"{filtered['Subject'][i]}_DTI_Schaefer2018_200_7Networks_connmat_sift2")
+            scqScore = filtered['scq_total'][i]
+            if np.isnan(scqScore):
+                scq.append(None)
+            else:
+                scq.append(scqScore)
+    """ print(sum([x is None for x in scq])) # 8 missing SCQ values in patients
+    print(len(patients), len(scq)) # 176 """
+
+    # remove missing patients & ADOS
+    filteredP = []
+    filteredScq = []
+
+    for i, p in enumerate(fullP):
+        if p not in missingSubs:
+            filteredP.append(patients[i])
+            filteredScq.append(scq[i])
+    """ print(len(filteredP), len(scq), len(filteredScq))
+    print(sum([x is None for x in filteredScq])) # now 7 missing values """
+
+    # Create DataFrame with Patients, NNS, SCQ
+    data = {'Subject':  filteredP, 'NNS': patientScores, 'scq_total': filteredScq}
+    newDf = pd.DataFrame(data)
+    """ print(newDf.shape, len(patientScores))
+    print(newDf[newDf['scq_total'].isnull()]) # check NaN ADOS vals
+    # print(newDf.head()) """
+
+    df = newDf[newDf['scq_total'].notna()]
+    # print(df.shape, df['NNS'].describe())
+
+### Define Groups
 # Group 1 - all outliers
 g1 = df[df['NNS'] < lowWhisker]
 # print(g1.shape, stt.pearsonr(g1['NNS'], g1['ados_css']))
@@ -113,6 +151,7 @@ c5 = df[(df['NNS'] >= q3) & (df['NNS'] < highWhisker)] # Quartile 3 & up
 g4 = df[(df['NNS'] >= median) & (df['NNS'] < q3)] # b/w median & Q3
 g6 = df[df['NNS'] >= median] # median & up
 
+
 reportFile=open(f"{outputPath}/stats.txt",'w')
 reportFile.write("============== Significant Correlations ==============\n")
 
@@ -120,49 +159,62 @@ reportFile.write("============== Significant Correlations ==============\n")
 groupNames = ["g1", "g2", "g3_quartile1", "c5_quartile3", "g6_median", "c4_lowwhisker", "g4_median_q3", "all_patients"]
 allGroups = [g1, g2, g3, c5, g6, c4, g4, df]
 for ind, patientsDf in enumerate(allGroups):
-    nns, ados = patientsDf['NNS'], patientsDf['ados_css']
+    if isAdos:
+        severityType = "ADOS"
+        nns, severity = patientsDf['NNS'], patientsDf['ados_css']
+    else:
+        severityType = "SCQ"
+        nns, severity = patientsDf['NNS'], patientsDf['scq_total']
 
     # Calculate correlation values
-    r_pearson, p_pearson = stt.pearsonr(nns, ados)
-    r_spearman, p_spearman = stt.spearmanr(nns, ados)
+    r_pearson, p_pearson = stt.pearsonr(nns, severity)
+    r_spearman, p_spearman = stt.spearmanr(nns, severity)
 
-    if p_pearson <= 0.05:
+    if isAdos:
+        if p_pearson <= 0.05:
+            reportFile.write(f"\t {groupNames[ind]}\t Pearson r-value:{r_pearson:.3f}\t p-value:{p_pearson:.5f}\n")
+            outputFile = f"{outputPath}/{groupNames[ind]}.png"
+            plot=drawCorrelationPlot(nns, severity, r_pearson, p_pearson, "NNS",severityType,"", outputFile)
+            plot.close()
+        elif p_spearman <= 0.05:
+            reportFile.write(f"\t {groupNames[ind]}\t Spearman r-value:{r_spearman:.3f}\t p-value:{p_spearman:.5f}\n")
+            outputFile = f"{outputPath}/spearman_{groupNames[ind]}.png"
+            plot=drawCorrelationPlot(nns, severity, r_spearman, p_spearman, "NNS",severityType,"", outputFile)
+            plot.close()
+    else:
         reportFile.write(f"\t {groupNames[ind]}\t Pearson r-value:{r_pearson:.3f}\t p-value:{p_pearson:.5f}\n")
         outputFile = f"{outputPath}/{groupNames[ind]}.png"
-        plot=drawCorrelationPlot(nns, ados, r_pearson, p_pearson, "NNS","ADOS","", outputFile)
+        plot=drawCorrelationPlot(nns, severity, r_pearson, p_pearson, "NNS",severityType,"", outputFile)
         plot.close()
-    elif p_spearman <= 0.05:
-        reportFile.write(f"\t {groupNames[ind]}\t Spearman r-value:{r_spearman:.3f}\t p-value:{p_spearman:.5f}\n")
-        outputFile = f"{outputPath}/spearman_{groupNames[ind]}.png"
-        plot=drawCorrelationPlot(nns, ados, r_spearman, p_spearman, "NNS","ADOS","", outputFile)
-        plot.close()
+
 
 ### Group Difference between NNS of low ADOS vs high ADOS patients
-reportFile.write("\n============== Group Difference between NNS of low ADOS vs high ADOS patients ==============\n")
-# see if NNS scores of ADOS <=5 is sig diff from ADOS >5
-lowAdos = df[df['ados_css'] <= 5]
-highAdos = df[df['ados_css'] > 5]
+if isAdos:
+    reportFile.write("\n============== Group Difference between NNS of low ADOS vs high ADOS patients ==============\n")
+    # see if NNS scores of ADOS <=5 is sig diff from ADOS >5
+    lowAdos = df[df['ados_css'] <= 5]
+    highAdos = df[df['ados_css'] > 5]
 
-paramDiff = calculateGroupDifference(lowAdos['NNS'], highAdos['NNS'], parametric=False, paired=False) # significant
-nonparamDiff = calculateGroupDifference(lowAdos['NNS'], highAdos['NNS'], parametric=True, paired=False)
+    paramDiff = calculateGroupDifference(lowAdos['NNS'], highAdos['NNS'], parametric=False, paired=False) # significant
+    nonparamDiff = calculateGroupDifference(lowAdos['NNS'], highAdos['NNS'], parametric=True, paired=False)
 
-reportFile.write("============== Parametric test (with Cohen's D) ==============\n")
-if paramDiff[1] <= 0.05:
-    reportFile.write("***")
-reportFile.write(f"\t Effect Size:{paramDiff[0]:.3f}\t p-value:{paramDiff[1]:.5f}\n")
-reportFile.write("============== Non-parametric test (Mann-Whitney U test (not paired) for repeated measures with non normal distribution) ==============\n")
-if nonparamDiff[1] <= 0.05:
-    reportFile.write("***")
-reportFile.write(f"\t Effect Size:{nonparamDiff[0]:.3f}\t p-value:{nonparamDiff[1]:.5f}\n")
+    reportFile.write("============== Parametric test (with Cohen's D) ==============\n")
+    if paramDiff[1] <= 0.05:
+        reportFile.write("***")
+    reportFile.write(f"\t Effect Size:{paramDiff[0]:.3f}\t p-value:{paramDiff[1]:.5f}\n")
+    reportFile.write("============== Non-parametric test (Mann-Whitney U test (not paired) for repeated measures with non normal distribution) ==============\n")
+    if nonparamDiff[1] <= 0.05:
+        reportFile.write("***")
+    reportFile.write(f"\t Effect Size:{nonparamDiff[0]:.3f}\t p-value:{nonparamDiff[1]:.5f}\n")
 
-dat = [lowAdos['NNS'].tolist(), highAdos['NNS'].tolist()]
-lab = ['<=5', '>5']
-minY=min([min(l) for l in dat])
-maxY=max([max(l) for l in dat])
-offset=(maxY-minY)/5.0
-yLim=[minY-offset/2.0,maxY+offset]
-colors=['#351C4D', '#AB3E16','#849974','#2096BA','#F7DFD4','#F5AB99']
-drawBoxPlot(dat,lab,"",f"{outputPath}/NNS_box.png",xLabel='',yLabel="NNS", colors=colors, rotation=0,plotScatter=True,yLim=yLim,middleLine='median')
+    dat = [lowAdos['NNS'].tolist(), highAdos['NNS'].tolist()]
+    lab = ['<=5', '>5']
+    minY=min([min(l) for l in dat])
+    maxY=max([max(l) for l in dat])
+    offset=(maxY-minY)/5.0
+    yLim=[minY-offset/2.0,maxY+offset]
+    colors=['#351C4D', '#AB3E16','#849974','#2096BA','#F7DFD4','#F5AB99']
+    drawBoxPlot(dat,lab,"",f"{outputPath}/NNS_box.png",xLabel='',yLabel="NNS", colors=colors, rotation=0,plotScatter=True,yLim=yLim,middleLine='median')
 
 reportFile.close()
 

@@ -1,0 +1,9 @@
+============== Significant Correlations ==============
+	 g1	 Pearson r-value:0.045	 p-value:0.89501
+	 g2	 Pearson r-value:0.148	 p-value:0.45371
+	 g3_quartile1	 Pearson r-value:0.023	 p-value:0.80929
+	 c5_quartile3	 Pearson r-value:-0.230	 p-value:0.15265
+	 g6_median	 Pearson r-value:-0.202	 p-value:0.07028
+	 c4_lowwhisker	 Pearson r-value:-0.022	 p-value:0.79329
+	 g4_median_q3	 Pearson r-value:-0.291	 p-value:0.06534
+	 all_patients	 Pearson r-value:-0.005	 p-value:0.95178
