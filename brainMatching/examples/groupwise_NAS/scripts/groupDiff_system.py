@@ -150,8 +150,8 @@ for ind, system in enumerate(sysNames):
         outputPath=outputPath+timePoints+"_"+measureType+"_"+scoreType+"."+plotExtension
 
 
-    data = [scores[patients], scores[healthy]][:numTimePoints]
-    dataLabels=['Patient','Healthy'][:numTimePoints]
+    data = [scores[healthy], scores[patients]][:numTimePoints]
+    dataLabels=['Healthy Controls', 'ASD Patients'][:numTimePoints]
 
     minY=min([min(l) for l in data])
     maxY=max([max(l) for l in data])
