@@ -20,7 +20,7 @@ parser.add_argument('--noHealthyPlot', help='do notplot healthy controls', requi
 args = vars(parser.parse_args())
 # resultFile=args['resultFile']
 subjectListPath=args['subjectsList']
-# outputFolder=args['outputFolder']
+outputFolder=args['outputFolder']
 scoreType=args['scoreType']
 title=args['title']
 plotExtension=args['plotExtension']
@@ -59,7 +59,7 @@ sysNames = ["visual", "somatomotor", "dorsal", "ventral", "limbic", "frontoparie
 # sysNames = ["visual"]
 
 # create output folders for each system
-outputFolder = "../experiment/results/sys_level/plots"
+# outputFolder = "../experiment/results/sys_level/plots"
 for system in sysNames:
     sysPath = f"{outputFolder}/{system}"
     if not os.path.exists(sysPath):

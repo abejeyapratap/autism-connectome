@@ -74,8 +74,8 @@ fi
 sysDifference_similarity_py=$scriptFolderPath/groupDiff_system.py
 if( [ "$job" == "sysDiff" ] || [ "$job" == "complete" ] );then
 	echo -e "\tSystem-level group difference and generating "$plotType" plots..."
-	outpath=$plotsRoot/groupDifference
-	# mkdir -p $outpath/histograms
+	outpath=$results/sys_level/plots
+	mkdir -p $outpath
 
 	plotType=box #box or violin
 

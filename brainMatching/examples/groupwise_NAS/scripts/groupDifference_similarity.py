@@ -182,7 +182,7 @@ minY=min([min(l) for l in data])
 maxY=max([max(l) for l in data])
 offset=(maxY-minY)/5.0
 
-title = "Connectome-level NNS of Healthy Controls vs ASD Patient"
+title = "Connectome-level NNS of Healthy Controls vs ASD Patients"
 midLine = "mean"
 scoreName="network normality score (%)"
 #generate enough empty space above and below boxes
