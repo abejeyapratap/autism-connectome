@@ -38,3 +38,5 @@ __pycache__/
 # Connectome data files
 connectomes*
 # *.res
+__pycache__/*
+helpers.cpython-38.pyc
