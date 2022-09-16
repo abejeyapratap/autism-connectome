@@ -157,11 +157,12 @@ for ind, system in enumerate(sysNames):
     maxY=max([max(l) for l in data])
     offset=(maxY-minY)/5.0
 
+    midLine = "mean"
+    scoreName="network normality score (%)"
     #generate enough empty space above and below boxes
     yLim=[minY-offset/2.0,maxY+offset] ## use these lines to  make space specific to figure
     # yLim=[67,102] ## use these lines to make the space constant (such as across different plots)
-    scoreName="network similarity (%)"
     if plotType=="box":
-        drawBoxPlot(data,dataLabels,title,outputPath,xLabel='',yLabel=scoreName,colors=colors,rotation=0,plotScatter=True,yLim=yLim,middleLine='mean') #since we use Mann-Whitney U test for group dofference, we should plot median line in boxplots
+        drawBoxPlot(data,dataLabels,title,outputPath,xLabel='',yLabel=scoreName,colors=colors,rotation=0,plotScatter=True,yLim=yLim,middleLine=midLine) #since we use Mann-Whitney U test for group dofference, we should plot median line in boxplots
     elif plotType=="violin":
         drawViolinPlot(data,dataLabels,title,outputPath,xLabel='',yLabel=scoreName,colors=colors,rotation=0,yLim=yLim)
