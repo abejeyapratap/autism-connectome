@@ -157,6 +157,7 @@ for ind, system in enumerate(sysNames):
     maxY=max([max(l) for l in data])
     offset=(maxY-minY)/5.0
 
+    title = f"{sysNames[ind]} system's NNS of Healthy Controls vs ASD Patients"
     midLine = "mean"
     scoreName="network normality score (%)"
     #generate enough empty space above and below boxes
