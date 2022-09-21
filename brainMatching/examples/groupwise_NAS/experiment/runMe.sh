@@ -38,7 +38,7 @@ connectomeName="schaefer"
 # samples=$experimentFolder/../data/schaefer_male.txt
 # samples=$experimentFolder/../data/smallS.txt
 samples=$experimentFolder/../data/schaefer_filtered.txt
-connectomes=$experimentFolder/../data/connectomes_norm_schaefer # manual normalization
+connectomes=$experimentFolder/../data/connectomes_norm_schaefer_50 # manual normalization
 # connectomes=$experimentFolder/../data/connectomes_schaefer
 subjectsInfoPath='../data/tobacco_demographics.csv'
 

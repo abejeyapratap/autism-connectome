@@ -5,7 +5,8 @@ CONNECTOME_LEN = 220
 OLD = "./connectomes_schaefer"
 DIR = "./connectomes_norm_schaefer"
 
-os.mkdir(DIR)
+if not os.path.exists(DIR):
+    os.mkdir(DIR)
 
 for filename in os.listdir(OLD):
     # Load connectome into matrix
@@ -26,6 +27,7 @@ for filename in os.listdir(OLD):
         connectome[i][i] = 0
 
     edgesSummation = sum(map(sum, connectome)) / 2
+    edgesSummation = edgesSummation / 50 # scale to avoid super small numbers
 
     # Normalize connectome by summation
     for i in range(CONNECTOME_LEN):
