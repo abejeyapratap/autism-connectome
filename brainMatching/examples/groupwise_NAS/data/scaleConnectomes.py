@@ -2,34 +2,42 @@ import os
 
 CONNECTOME_LEN = 220
 
-# Load connectome into matrix
-connectome = []
-with open(f"R0006_V0021_DTI_Schaefer2018_200_7Networks_connmat_sift2.txt", "r") as f:
-    lines = f.read().splitlines()
-    if len(lines) != CONNECTOME_LEN:
-        print("fileName")
-    for i, stringLine in enumerate(lines):
-        line = stringLine.split()
-        if len(line) != CONNECTOME_LEN:
-            print("noo")
-        connectome.append([float(num) for num in stringLine.split()])
+OLD = "./connectomes_schaefer"
+DIR = "./connectomes_norm_schaefer"
 
-# set diagonals to 0
-for i in range(CONNECTOME_LEN):
-    connectome[i][i] = 0
+os.mkdir(DIR)
 
-edgesSummation = sum(map(sum, connectome)) / 20
+for filename in os.listdir(OLD):
+    # Load connectome into matrix
+    connectome = []
+    sysPath = f"{OLD}/{filename}"
+    with open(sysPath, "r") as f:
+        lines = f.read().splitlines()
+        if len(lines) != CONNECTOME_LEN:
+            print(sysPath)
+        for i, stringLine in enumerate(lines):
+            line = stringLine.split()
+            if len(line) != CONNECTOME_LEN:
+                print(sysPath)
+            connectome.append([float(num) for num in stringLine.split()])
 
-# Normalize connectome by summation
-for i in range(CONNECTOME_LEN):
-    for j in range(CONNECTOME_LEN):
-        connectome[i][j] = connectome[i][j] / edgesSummation
-print(max(map(max, connectome)))
-quit()
-# Save normalized connectome for use in brainMatch
-with open("duplicate.txt", "w") as f:
+    # set diagonals to 0
     for i in range(CONNECTOME_LEN):
-        f.write(" ".join(map(str, connectome[i])) + "\n")
+        connectome[i][i] = 0
+
+    edgesSummation = sum(map(sum, connectome)) / 2
+
+    # Normalize connectome by summation
+    for i in range(CONNECTOME_LEN):
+        for j in range(CONNECTOME_LEN):
+            connectome[i][j] = connectome[i][j] / edgesSummation
+    
+    # print(max(map(max, connectome)))
+
+    # Save normalized connectome for use in brainMatch
+    with open(f"{DIR}/{filename}", "w") as f:
+        for i in range(CONNECTOME_LEN):
+            f.write(" ".join(map(str, connectome[i])) + "\n")
 
 
 """ count = 0
