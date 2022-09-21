@@ -36,10 +36,10 @@ connectomeName="schaefer"
 # samples=$experimentFolder/../data/desikan_male.txt
 # connectomes=$experimentFolder/../data/connectomes_schaefer_200 ## 200/202 ROIs instead of 220
 # samples=$experimentFolder/../data/schaefer_male.txt
-samples=$experimentFolder/../data/smallS.txt
-# samples=$experimentFolder/../data/schaefer_filtered.txt
-# connectomes=$experimentFolder/../data/connectomes_norm_schaefer # manual normalization
-connectomes=$experimentFolder/../data/connectomes_schaefer
+# samples=$experimentFolder/../data/smallS.txt
+samples=$experimentFolder/../data/schaefer_filtered.txt
+connectomes=$experimentFolder/../data/connectomes_norm_schaefer # manual normalization
+# connectomes=$experimentFolder/../data/connectomes_schaefer
 subjectsInfoPath='../data/tobacco_demographics.csv'
 
 ### output path for the results and plots
