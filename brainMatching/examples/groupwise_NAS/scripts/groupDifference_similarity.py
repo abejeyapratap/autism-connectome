@@ -184,7 +184,7 @@ offset=(maxY-minY)/5.0
 
 title = "Connectome-level NNS of Healthy Controls vs ASD Patients"
 midLine = "mean"
-scoreName="network normality score (%)"
+scoreName="NNS (%)"
 #generate enough empty space above and below boxes
 yLim=[minY-offset/2.0,maxY+offset] ## use these lines to  make space specific to figure
 # yLim=[67,102] ## use these lines to make the space constant (such as across different plots)
