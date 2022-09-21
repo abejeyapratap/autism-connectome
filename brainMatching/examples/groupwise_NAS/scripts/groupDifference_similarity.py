@@ -176,13 +176,13 @@ else:
 
 
 data = [scores[healthy], scores[patients]][:numTimePoints]
-dataLabels=['Healthy Controls', 'ASD Patients'][:numTimePoints]
+dataLabels=['Healthy Controls', 'ASD Individuals'][:numTimePoints]
 
 minY=min([min(l) for l in data])
 maxY=max([max(l) for l in data])
 offset=(maxY-minY)/5.0
 
-title = "Connectome-level NNS of Healthy Controls vs ASD Patients"
+title = "Connectome-level NNS of Healthy Controls vs ASD Individuals"
 midLine = "mean"
 scoreName="NNS (%)"
 #generate enough empty space above and below boxes

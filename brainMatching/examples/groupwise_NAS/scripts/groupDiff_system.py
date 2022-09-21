@@ -56,6 +56,7 @@ patientGroupNames = ["ASD"]
 ##############load results of average NNS processing ###################
 systemMatchingPath = "../experiment/results/sys_level"
 sysNames = ["visual", "somatomotor", "dorsal", "ventral", "limbic", "frontoparietal", "defaultmode", "subcortical"]
+fullSysNames = ["Visual", "Somatomotor", "Dorsal", "Ventral", "Limbic", "Frontoparietal", "Default Mode", "Sub-cortical"]
 # sysNames = ["visual"]
 
 # create output folders for each system
@@ -151,13 +152,13 @@ for ind, system in enumerate(sysNames):
 
 
     data = [scores[healthy], scores[patients]][:numTimePoints]
-    dataLabels=['Healthy Controls', 'ASD Patients'][:numTimePoints]
+    dataLabels=['Healthy Controls', 'ASD Individuals'][:numTimePoints]
 
     minY=min([min(l) for l in data])
     maxY=max([max(l) for l in data])
     offset=(maxY-minY)/5.0
 
-    title = f"{sysNames[ind]} system's NNS of Healthy Controls vs ASD Patients"
+    title = f"{fullSysNames[ind]} Sub-Network NNS of Healthy Controls vs ASD Individuals"
     midLine = "mean"
     scoreName="NNS (%)"
     #generate enough empty space above and below boxes
