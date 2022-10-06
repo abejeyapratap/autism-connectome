@@ -117,10 +117,12 @@ pValue_nonparametric=np.zeros(len(patientGroups))
 effectSize_parametric[0], pValue_parametric[0] = calculateGroupDifference(scores[controlGroups[0]],scores[patientGroups[0]],parametric=True,paired=False)
 # print(effectSize_parametric, pValue_parametric)
 # quit()
+effectSize_parametric[0], pValue_parametric[0] = calculateGroupDifference(scores[controlGroups[0]],scores[patientGroups[0]],parametric=True,paired=False, discardOutliers=True)
 
 effectSize_nonparametric[0], pValue_nonparametric[0] = calculateGroupDifference(scores[controlGroups[0]],scores[patientGroups[0]],parametric=False,paired=False)
 # print(effectSize_nonparametric, pValue_nonparametric)
 # quit()
+effectSize_nonparametric[0], pValue_nonparametric[0] = calculateGroupDifference(scores[controlGroups[0]],scores[patientGroups[0]],parametric=False,paired=False, discardOutliers=True)
 
 histogramPath=outputFolder+"histograms/"+timePoints+"_"+measureType+"_"+scoreType+"_"+str(patientGroupNames[0])+"_"+str(controlGroupNames[0])+"."+plotExtension
 drawHistogram2Dataset(scores[healthy],scores[patientGroups[0]],histogramPath,effectSize_parametric[0],pValue_parametric[0],'','',controlGroupNames[0],patientGroupNames[0],"",xLabel=measureType,yLabel="frequency",color1='dodgerblue',color2='magenta')
