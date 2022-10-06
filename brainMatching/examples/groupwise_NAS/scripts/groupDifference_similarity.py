@@ -112,6 +112,7 @@ pValue_nonparametric=np.zeros(len(patientGroups))
 
 # print(len(scores[healthy]), len(scores[patients]))
 # quit()
+#test
 
 # Calculate group difference btw healthy vs patients
 effectSize_parametric[0], pValue_parametric[0] = calculateGroupDifference(scores[controlGroups[0]],scores[patientGroups[0]],parametric=True,paired=False)
