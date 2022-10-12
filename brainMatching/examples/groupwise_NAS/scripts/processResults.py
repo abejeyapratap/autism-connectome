@@ -98,6 +98,9 @@ if(analysisLevel=="group"):
     elif(measureType=='accuracy'):
         #starting from 6+numSubjects line, read until the end of the file for matching nodes between subject pairs
         matchings=np.array([np.fromstring(cont,dtype=int,sep='\t') for cont in fileContent[6+numSubjects:-1]])
+        
+        # create NS scoring matrix of 1 subject relative to another subject (subject_r relative to subject_c)
+        # each [row][col] is correct node matches / total nodes (aka %correct matches for that subject)
         scores=np.zeros((numSubjects,numSubjects),dtype=float)
         for i in range(len(matchings)):
             row=matchings[i][0] #first colulmn is the order number of the first subject
@@ -108,6 +111,9 @@ if(analysisLevel=="group"):
         scores/=float(numNodes)
         scores*=100
     
+    # using NS matrix of 1 subject relative to another subject, define norm to be healthy controls
+    # calculate average NS of 1 subject relative to all healthy controls --> NNS
+        # (aka S0 relative to S0-S150, S158 relative to S0-S150, etc)
     ### now, calculate average matching/similarity scores relative to healthy controls
     ### NOTE: we are discarding the matching of a healthy control subject to itself in 
     ###       calculation of each subjec't average score relative to healthy controls
