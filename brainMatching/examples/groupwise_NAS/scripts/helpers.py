@@ -94,7 +94,7 @@ def getOutlierIndices(data):
     indices = np.argwhere((data<=upperBound) & (data>=lowerBound))
     return indices    
         
-
+### NOTE: MODIFIED THIS FUNCTION 
 def calculateGroupDifference(data1,data2,parametric=True,paired=False,discardOutliers=False,alternative='two-sided'):
     import numpy as np
     import scipy.stats as stt
@@ -125,6 +125,11 @@ def calculateGroupDifference(data1,data2,parametric=True,paired=False,discardOut
             if(var[1]!=0):
                 F=var[0]/var[1]
                 pVal=1-stt.f.cdf(F,len(data1)-1,len(data2)-1)#if, pVal<0.05, two distributions have different variance
+
+                ### HACK : order seems to matter for F-test; in checkGroupDiff() ###
+                # we pass in order as patients-healthy, so do 1-pVal to account for that ordering (greater variance divided by lower variance)
+                if var[1] > var[0]:
+                    pVal = 1 - pVal
             else:### if variance of one of the data is zero while the other is not, then consider this as the two dataset has different variance
                 pVal=0
             if(pVal>0.05):
