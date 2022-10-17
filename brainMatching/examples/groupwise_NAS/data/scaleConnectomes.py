@@ -1,9 +1,14 @@
 import os
 
-CONNECTOME_LEN = 200
+# Schaefer
+# OLD = "./connectomes_schaefer/schaefer_200"
+# DIR = "./connectomes_schaefer/norm_schaefer_200_2"
 
-OLD = "./connectomes_schaefer/schaefer_200"
-DIR = "./connectomes_schaefer/norm_schaefer_200_2"
+# Desikan
+OLD = "./connectomes_desikan/desikan"
+DIR = "./connectomes_desikan/norm_desikan_2"
+
+CONNECTOME_LEN = 86
 
 if not os.path.exists(DIR):
     os.mkdir(DIR)
