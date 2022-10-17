@@ -3,6 +3,24 @@
 
 import os
 
+# Sanity check to see if Schaefer connectomes were filtered properly
+""" for file in os.listdir("./connectomes_schaefer_200"):
+    with open(f"./connectomes_new_schaefer/{file}") as f:
+        temp = f.read().splitlines()
+        if len(temp) != 200 or len(temp[0].split()) != 200:
+            print(file)
+            # print(len(temp), len(temp[0]))
+            break """
+
+for file in os.listdir("./connectomes_schaefer/norm_schaefer_200_2"):
+    with open(f"./connectomes_schaefer/norm_schaefer_200_2/{file}") as f:
+        temp = f.read().splitlines()
+        if len(temp) != 200 or len(temp[0].split()) != 200:
+            print(file)
+            print(len(temp), len(temp[0].split()))
+            break
+exit()
+
 sFiles = []
 with open("schaefer_filtered.txt", "r") as f:
     sFiles = f.read().splitlines()
@@ -21,20 +39,3 @@ for i, _ in enumerate(sFiles):
     if s != d:
         count += 1
 # print(count)
-
-# Sanity check to see if Schaefer connectomes were filtered properly
-""" for file in os.listdir("./connectomes_schaefer_200"):
-    with open(f"./connectomes_new_schaefer/{file}") as f:
-        temp = f.read().splitlines()
-        if len(temp) != 200 or len(temp[0].split()) != 200:
-            print(file)
-            # print(len(temp), len(temp[0]))
-            break """
-
-for file in os.listdir("./connectomes_schaefer_202"):
-    with open(f"./connectomes2/{file}") as f:
-        temp = f.read().splitlines()
-        if len(temp) != 202 or len(temp[0].split()) != 202:
-            print(file)
-            print(len(temp), len(temp[0]))
-            break
