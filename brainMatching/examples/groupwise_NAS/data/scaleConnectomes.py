@@ -1,9 +1,9 @@
 import os
 
-CONNECTOME_LEN = 220
+CONNECTOME_LEN = 200
 
-OLD = "./connectomes_schaefer"
-DIR = "./connectomes_norm_schaefer"
+OLD = "./connectomes_schaefer/schaefer_200"
+DIR = "./connectomes_schaefer/norm_schaefer_200_2"
 
 if not os.path.exists(DIR):
     os.mkdir(DIR)
@@ -16,10 +16,12 @@ for filename in os.listdir(OLD):
         lines = f.read().splitlines()
         if len(lines) != CONNECTOME_LEN:
             print(sysPath)
+            exit(1)
         for i, stringLine in enumerate(lines):
             line = stringLine.split()
             if len(line) != CONNECTOME_LEN:
                 print(sysPath)
+                exit(2)
             connectome.append([float(num) for num in stringLine.split()])
 
     # set diagonals to 0
@@ -27,7 +29,7 @@ for filename in os.listdir(OLD):
         connectome[i][i] = 0
 
     edgesSummation = sum(map(sum, connectome)) / 2
-    edgesSummation = edgesSummation / 50 # scale to avoid super small numbers
+    # edgesSummation = edgesSummation / 50 # scale to avoid super small numbers
 
     # Normalize connectome by summation
     for i in range(CONNECTOME_LEN):
