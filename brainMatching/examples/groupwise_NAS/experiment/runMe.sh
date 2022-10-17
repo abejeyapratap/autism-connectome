@@ -29,16 +29,16 @@ preprocessGraphs="-preprocessGraphs normalizeEdges"
 connectomeName="schaefer"
 
 ### path to connectomes, list of samples to be used in the experiment, and cognitive scores of samples
-# samples=$experimentFolder/../data/subjects_qa.txt
 # subjectsInfoPath='../data/tbi_longitudinal_dtiQAPass_20210121.csv'
+# samples=$experimentFolder/../data/subjects_qa.txt
 # connectomes=$experimentFolder/../data/connectomes_desikan
 # samples=$experimentFolder/../data/desikan_filtered.txt
 # samples=$experimentFolder/../data/desikan_male.txt
-# connectomes=$experimentFolder/../data/connectomes_schaefer_200 ## 200/202 ROIs instead of 220
+connectomes=$experimentFolder/../data/connectomes/schaefer_200 ## 200/202 ROIs instead of 220
 # samples=$experimentFolder/../data/schaefer_male.txt
 # samples=$experimentFolder/../data/smallS.txt
-samples=$experimentFolder/../data/schaefer_below12.txt
-# samples=$experimentFolder/../data/schaefer_filtered.txt
+# samples=$experimentFolder/../data/schaefer_below12.txt
+samples=$experimentFolder/../data/subjectNames/schaefer_filtered.txt
 # connectomes=$experimentFolder/../data/connectomes_norm_schaefer_50 # manual normalization
 connectomes=$experimentFolder/../data/connectomes_schaefer
 subjectsInfoPath='../data/tobacco_demographics.csv'
