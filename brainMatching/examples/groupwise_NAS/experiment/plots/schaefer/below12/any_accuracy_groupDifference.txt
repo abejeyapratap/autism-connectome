@@ -6,8 +6,13 @@ Discard outliers:True
 	Healthy vs Patients	 F-test:0.158550	Bartlett:0.316047	Levene:0.663226 
 Discard outliers:False
 	Healthy vs Patients	 F-test:0.000000	Bartlett:0.000000	Levene:0.002701 
-============== Group Difference: any accuracy  dist score==============
+============== Group Difference (outliers): any accuracy  dist score==============
 ============== Parametric test (with Cohen's D) ==============
 	TDC vs ASD	:	0.31 (0.056004 -- 0.056004) 
 ============== Non-parametric test (Wilcoxon Signed-rank (if paired) test or Mann-Whitney U test (if not paired) for repeated measures with non normal distribution) ==============
 	TDC vs ASD	:	0.07 (0.410279 -- 0.410279) 
+============== Group Difference (no outliers): any accuracy  dist score==============
+============== Parametric test (with Cohen's D) ==============
+	TDC vs ASD	:	0.05 (0.766456 -- 0.766456) 
+============== Non-parametric test (Wilcoxon Signed-rank (if paired) test or Mann-Whitney U test (if not paired) for repeated measures with non normal distribution) ==============
+	TDC vs ASD	:	-0.00 (0.986876 -- 0.986876) 
