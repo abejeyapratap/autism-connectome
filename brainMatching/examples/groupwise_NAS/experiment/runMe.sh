@@ -21,8 +21,8 @@ mixedModel_plot_similarity_time_py=$scriptFolderPath/mixedModel_plot_similarity_
 assignmentCost=" -assCost edgesIgnoreDiag"
 pathType="-pathType direct" # could have been "-pathType shortestPath" or "-pathType wCommunicability -pathLength 2"
 
-# preprocessGraphs="-preprocessGraphs none"
-preprocessGraphs="-preprocessGraphs normalizeEdges"
+preprocessGraphs="-preprocessGraphs none"
+# preprocessGraphs="-preprocessGraphs normalizeEdges"
 # preprocessGraphs="-preprocessGraphs logScaleEdgesStructure"
 # preprocessGraphs="-preprocessGraphs logScaleEdgesStructure_normalizeEdges"
 
@@ -34,13 +34,13 @@ connectomeName="schaefer"
 # connectomes=$experimentFolder/../data/connectomes_desikan
 # samples=$experimentFolder/../data/desikan_filtered.txt
 # samples=$experimentFolder/../data/desikan_male.txt
-connectomes=$experimentFolder/../data/connectomes_schaefer/schaefer_200 ## 200/202 ROIs instead of 220
+connectomes=$experimentFolder/../data/connectomes_schaefer/schaefer_200 ## 200 ROIs instead of 220
 # samples=$experimentFolder/../data/schaefer_male.txt
 # samples=$experimentFolder/../data/smallS.txt
 # samples=$experimentFolder/../data/schaefer_below12.txt
 samples=$experimentFolder/../data/subjectNames/schaefer_filtered.txt
-# connectomes=$experimentFolder/../data/connectomes_norm_schaefer_50 # manual normalization
-connectomes=$experimentFolder/../data/connectomes_schaefer
+# connectomes=$experimentFolder/../data/connectomes_schaefer/norm_schaefer_200_2 # MY manual normalization
+# connectomes=$experimentFolder/../data/connectomes_schaefer
 subjectsInfoPath='../data/tobacco_demographics.csv'
 
 ### output path for the results and plots

@@ -13,7 +13,7 @@ plotExtension=png #png or svg
 # ./runMe.sh sysProc
 
 ## connectome level group difference (-- aka boxplot)
-# ./runMe.sh grpDiff $plotExtension
+./runMe.sh grpDiff $plotExtension
 
 ## system level group difference (-- aka boxplot)
 # ./runMe.sh sysDiff $plotExtension
