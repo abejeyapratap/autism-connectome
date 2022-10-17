@@ -7,7 +7,7 @@ plotExtension=png #png or svg
 # ./runMe.sh expRun
 
 ##process connectomes at connectome-level
-./runMe.sh expProc
+# ./runMe.sh expProc
 
 ##process connectomes at Yeo system-level
 # ./runMe.sh sysProc

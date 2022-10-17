@@ -112,23 +112,29 @@ effectSize_nonparametric=np.zeros(len(patientGroups))
 pValue_parametric=np.zeros(len(patientGroups))
 pValue_nonparametric=np.zeros(len(patientGroups))
 
+ES_parametric_noOutliers=np.zeros(len(patientGroups))
+ES_nonparametric_noOutliers=np.zeros(len(patientGroups))
+pValue_parametric_noOutliers=np.zeros(len(patientGroups))
+pValue_nonparametric_noOutliers=np.zeros(len(patientGroups))
+
 # print(len(scores[healthy]), len(scores[patients]))
 # quit()
 
-# Calculate group difference btw healthy vs patients
+# Calculate group difference b/w healthy vs patients
 effectSize_parametric[0], pValue_parametric[0] = calculateGroupDifference(scores[controlGroups[0]],scores[patientGroups[0]],parametric=True,paired=False)
 # print(effectSize_parametric, pValue_parametric)
 # quit()
 
 # remove outliers
-# effectSize_parametric[0], pValue_parametric[0] = calculateGroupDifference(scores[controlGroups[0]],scores[patientGroups[0]],parametric=True,paired=False, discardOutliers=True)
+ES_parametric_noOutliers[0], pValue_parametric_noOutliers[0] = calculateGroupDifference(scores[controlGroups[0]],scores[patientGroups[0]],parametric=True,paired=False, discardOutliers=True)
 
 effectSize_nonparametric[0], pValue_nonparametric[0] = calculateGroupDifference(scores[controlGroups[0]],scores[patientGroups[0]],parametric=False,paired=False)
 # print(effectSize_nonparametric, pValue_nonparametric)
 # quit()
 
 # remove outliers
-# effectSize_nonparametric[0], pValue_nonparametric[0] = calculateGroupDifference(scores[controlGroups[0]],scores[patientGroups[0]],parametric=False,paired=False, discardOutliers=True)
+ES_nonparametric_noOutliers[0], pValue_nonparametric_noOutliers[0] = calculateGroupDifference(scores[controlGroups[0]],scores[patientGroups[0]],parametric=False,paired=False, discardOutliers=True)
+
 
 histogramPath=outputFolder+"histograms/"+timePoints+"_"+measureType+"_"+scoreType+"_"+str(patientGroupNames[0])+"_"+str(controlGroupNames[0])+"."+plotExtension
 drawHistogram2Dataset(scores[healthy],scores[patientGroups[0]],histogramPath,effectSize_parametric[0],pValue_parametric[0],'','',controlGroupNames[0],patientGroupNames[0],"",xLabel=measureType,yLabel="frequency",color1='dodgerblue',color2='magenta')
@@ -153,8 +159,8 @@ for discardOutliers in [True,False]:
     reportFile.write("Discard outliers:"+str(discardOutliers)+"\n")
     reportFile.write("\tHealthy vs Patients\t F-test:%f\tBartlett:%f\tLevene:%f \n" % (checkDifferenceOfVariance(scores[patients],scores[healthy],'F',discardOutliers)[1],checkDifferenceOfVariance(scores[healthy],scores[patients],'bartlett',discardOutliers)[1],checkDifferenceOfVariance(scores[healthy],scores[patients],'levene',discardOutliers)[1]))
 
-
-reportFile.write("============== Group Difference: "+timePoints+" "+measureType+"  "+scoreType+" score==============\n")
+# Save Group diff with outliers results
+reportFile.write("============== Group Difference (outliers): "+timePoints+" "+measureType+"  "+scoreType+" score==============\n")
 reportFile.write("============== Parametric test (with Cohen's D) ==============\n")
 for i in range(len(patientGroups)):
     if len(scores[patientGroups[i]])==0:
@@ -170,8 +176,27 @@ for i in range(len(patientGroups)):
     if(corrected_pValue_nonparametric[i]<=0.05):
         reportFile.write("**")
     reportFile.write("\t"+str(controlGroupNames[i])+" vs "+str(patientGroupNames[i])+"\t:\t%0.2f (%f -- %f) \n" % (effectSize_nonparametric[i],pValue_nonparametric[i],corrected_pValue_nonparametric[i]))
-reportFile.close()
 
+
+# Save Group diff without outliers results
+reportFile.write("============== Group Difference (no outliers): "+timePoints+" "+measureType+"  "+scoreType+" score==============\n")
+reportFile.write("============== Parametric test (with Cohen's D) ==============\n")
+for i in range(len(patientGroups)):
+    if len(scores[patientGroups[i]])==0:
+        continue
+    if(pValue_parametric_noOutliers[i]<=0.05):
+        reportFile.write("**")
+    reportFile.write("\t"+str(controlGroupNames[i])+" vs "+str(patientGroupNames[i])+"\t:\t%0.2f (%f -- %f) \n" % (ES_parametric_noOutliers[i],pValue_parametric_noOutliers[i], pValue_parametric_noOutliers))
+
+reportFile.write("============== Non-parametric test (Wilcoxon Signed-rank (if paired) test or Mann-Whitney U test (if not paired) for repeated measures with non normal distribution) ==============\n")
+for i in range(len(patientGroups)):
+    if len(scores[patientGroups[i]])==0:
+        continue
+    if(pValue_nonparametric_noOutliers[i]<=0.05):
+        reportFile.write("**")
+    reportFile.write("\t"+str(controlGroupNames[i])+" vs "+str(patientGroupNames[i])+"\t:\t%0.2f (%f -- %f) \n" % (ES_nonparametric_noOutliers[i],pValue_nonparametric_noOutliers[i],pValue_nonparametric_noOutliers[i]))
+
+reportFile.close()
 
 ##########draw boxplot or violin plot matching scores of systems###################
 colors=['#351C4D', '#AB3E16','#849974','#2096BA','#F7DFD4','#F5AB99'] #nightfall, rust, fresh, shutter blue, macaron, tropical pink

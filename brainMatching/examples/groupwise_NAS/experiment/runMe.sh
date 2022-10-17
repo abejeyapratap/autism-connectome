@@ -81,7 +81,7 @@ if( [ "$job" == "sysDiff" ] || [ "$job" == "complete" ] );then
 	plotType=box #box or violin
 
 	python3 $sysDifference_similarity_py -r $resultFileAccuracy -o $outpath/ -s $samples --scoreType dist  --plotExtension $plotExtension --plotType $plotType --timePoints any
-	# python3 $sysDifference_similarity_py -r $resultFileAccuracy -o $outpath/ -s $samples --scoreType dist  --plotExtension $plotExtension --plotType $plotType --timePoints any --noHealthyPlot
+	python3 $sysDifference_similarity_py -r $resultFileAccuracy -o $outpath/ -s $samples --scoreType dist  --plotExtension $plotExtension --plotType $plotType --timePoints any --noHealthyPlot
 fi
 
 if( [ "$job" == "grpDiff" ] || [ "$job" == "complete" ] );then
