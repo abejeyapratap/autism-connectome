@@ -45,7 +45,8 @@ samples=$experimentFolder/../data/subjectNames/schaefer_filtered.txt
 subjectsInfoPath='../data/tobacco_demographics.csv'
 
 ### output path for the results and plots
-results=$experimentFolder/results
+# results=$experimentFolder/results
+results=$experimentFolder/results_schaefer/male_schaefer220_norm_50
 plotsRoot=$experimentFolder/plots
 
 ########### run matching experiment ##############
