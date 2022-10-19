@@ -9,24 +9,34 @@ parser.add_argument('-o','--outputFile', help='file path to save the distributio
 parser.add_argument('-mt','--measureType', help='which measure to analyze: similarity score or matching accuracy', required=False,type=str,choices=['accuracy','similarity'],default='similarity')
 parser.add_argument('-al','--analysisLevel', help='is this a subjectwise or a groupwise analysis?', required=True,type=str,choices=['subject','group'])
 parser.add_argument('-rt','--relativeTo', help='calculate similarity relative to which group?', required=False,type=str,choices=['self','healthy'],default='healthy')
-parser.add_argument('--noSymmetry', help='do not symmetrize distances', required=False,action='store_true',default=False)
+parser.add_argument('--noSymmetry', help='do not symmetrize distances',required=False,action='store_true',default=False)
+parser.add_argument('-mp','--sysMap', help='file path to Yeo systems',required=True)
+parser.add_argument('-ns','--numSys', help='number of Yeo sub-systems',required=False,type=int,choices=[7,8],default=8)
 
 
 args = vars(parser.parse_args())
 resultFilePath=args['resultFile']
 subjectListPath=args['subjectsList']
-outputFilePath=args['outputFile']
+outputPath=args['outputFile']
 measureType=args['measureType']
 analysisLevel=args['analysisLevel']
 relativeTo=args['relativeTo']
 noSymmetry=args['noSymmetry']
+sysMapPath = args['sysMap']
+numSys = args['numSys']
+
+""" print(outputPath)
+print(sysMapPath)
+print(numSys, type(numSys))
+exit() """
 
 
 # load healthy & patient IDs from files
 tdcPath = "../data/subjectNames/tdc/tdc_schaefer.txt"
 asdPath = "../data/subjectNames/asd/asd_schaefer.txt"
-# tdcPath = "../data/tdc_schaefer.txt"
-# asdPath = "../data/asd_schaefer.txt"
+# tdcPath = "../data/subjectNames/tdc/tdc_schaefer_male.txt"
+# asdPath = "../data/subjectNames/asd/asd_schaefer_male.txt"
+
 
 with open(tdcPath, "r") as f:
     healthyIDs = f.read().splitlines()
@@ -54,7 +64,8 @@ limbicFive = []
 frontoparietalSix = []
 defaultmodeSeven = []
 subcorticalEight = []
-allSys = [visualOne, somatomotorTwo, dorsalThree, ventralFour, limbicFive, frontoparietalSix, defaultmodeSeven, subcorticalEight]
+allSys = [visualOne, somatomotorTwo, dorsalThree, ventralFour, limbicFive, frontoparietalSix, defaultmodeSeven, subcorticalEight][:numSys]
+
 for index, mapping in enumerate(sysMaps):
     if mapping == '1':
         visualOne.append(index)
@@ -72,7 +83,10 @@ for index, mapping in enumerate(sysMaps):
         defaultmodeSeven.append(index)
     elif mapping == '8':
         subcorticalEight.append(index)
-sysNames = ["visual", "somatomotor", "dorsal", "ventral", "limbic", "frontoparietal", "defaultmode", "subcortical"]
+
+sysNames = ["visual", "somatomotor", "dorsal", "ventral", "limbic", "frontoparietal", "defaultmode", "subcortical"][:numSys]
+
+# print(len(allSys), len(sysNames))
 
 """ print(sum([len(mapping) for mapping in allSys]))
 print(len(somatomotorTwo))
@@ -100,7 +114,7 @@ for ind, system in enumerate(allSys):
         row=matchings[i][0] #first column is the order number of the first subject
         col=matchings[i][1] #second column is the order number of the second subject
 
-        for j in system:
+        for j in system: # instead of all ROIs, use only the ones in currentSystem
             if(matchings[i][2+j]==j):
                 scores[row][col]+=1
         """ print(scores[row][col])
@@ -128,7 +142,7 @@ for ind, system in enumerate(allSys):
 
     scoreName='matching accuracy (%)'
     
-    outputPath = "../experiment/results/sys_level"
+    # outputPath = "../experiment/results/sys_level"
     outputFile=open(f"{outputPath}/{sysNames[ind]}.res",'w')
     outputFile.write("#numNodes,numSubjects\n%d\t%d\n" % (numNodes,numSubjects))
     outputFile.write("#measureType\n"+measureType+"\n")

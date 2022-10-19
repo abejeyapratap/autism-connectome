@@ -46,7 +46,7 @@ subjectsInfoPath='../data/tobacco_demographics.csv'
 
 ### output path for the results and plots
 # results=$experimentFolder/results
-results=$experimentFolder/results_schaefer/male_schaefer220_norm_50
+results=$experimentFolder/results_schaefer/schaefer200_normEdg
 plotsRoot=$experimentFolder/plots
 
 ########### run matching experiment ##############
@@ -58,12 +58,15 @@ if( [ "$job" == "expRun" ] || [ "$job" == "complete" ] );then
 fi
 
 ########### system & connectome level analysis ##############
-sysFileAccuracy=$results/NNS_sys_rt_healthy.res ## DELETE
+sysFileOut=$results/sys_level
 sysResults_py=$scriptFolderPath/processSystems.py
+sysYeo=$experimentFolder/../data/yeo_7systems_schaefer.txt
+numSys=7
 if( [ "$job" == "sysProc" ] || [ "$job" == "complete" ] );then
 	echo -e "\tSystem-level processing raw experiment results..."
+	mkdir -p $sysFileOut
 
-	python3 $sysResults_py -r $results/"matching_raw_0.res" -o $sysFileAccuracy -s $samples -mt accuracy -al group --relativeTo healthy
+	python3 $sysResults_py -r $results/"matching_raw_0.res" -o $sysFileOut -s $samples -mt accuracy -al group --relativeTo healthy --sysMap $sysYeo --numSys $numSys
 fi
 
 resultFileAccuracy=$results/NAS_rt_healthy.res
@@ -82,8 +85,8 @@ if( [ "$job" == "sysDiff" ] || [ "$job" == "complete" ] );then
 
 	plotType=box #box or violin
 
-	python3 $sysDifference_similarity_py -r $resultFileAccuracy -o $outpath/ -s $samples --scoreType dist  --plotExtension $plotExtension --plotType $plotType --timePoints any
-	python3 $sysDifference_similarity_py -r $resultFileAccuracy -o $outpath/ -s $samples --scoreType dist  --plotExtension $plotExtension --plotType $plotType --timePoints any --noHealthyPlot
+	python3 $sysDifference_similarity_py -r $resultFileAccuracy -o $outpath/ -s $samples --scoreType dist  --plotExtension $plotExtension --plotType $plotType --timePoints any --sysFiles $sysFileOut --numSys $numSys
+	python3 $sysDifference_similarity_py -r $resultFileAccuracy -o $outpath/ -s $samples --scoreType dist  --plotExtension $plotExtension --plotType $plotType --timePoints any --noHealthyPlot --sysFiles $sysFileOut --numSys $numSys
 fi
 
 if( [ "$job" == "grpDiff" ] || [ "$job" == "complete" ] );then
