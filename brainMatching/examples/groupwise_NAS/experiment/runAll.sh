@@ -10,7 +10,7 @@ plotExtension=png #png or svg
 # ./runMe.sh expProc
 
 ##process connectomes at Yeo system-level
-./runMe.sh sysProc
+# ./runMe.sh sysProc
 
 ## connectome level group difference (-- aka boxplot)
 # ./runMe.sh grpDiff $plotExtension
