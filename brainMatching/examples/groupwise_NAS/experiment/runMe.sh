@@ -48,6 +48,7 @@ subjectsInfoPath='../data/tobacco_demographics.csv'
 # results=$experimentFolder/results
 results=$experimentFolder/results_schaefer/schaefer200_normEdg
 plotsRoot=$experimentFolder/plots
+numSys=7
 
 ########### run matching experiment ##############
 ##calculate distance between healthy controls using graph matching
@@ -61,9 +62,9 @@ fi
 sysFileOut=$results/sys_level
 sysResults_py=$scriptFolderPath/processSystems.py
 sysYeo=$experimentFolder/../data/yeo_7systems_schaefer.txt
-numSys=7
 if( [ "$job" == "sysProc" ] || [ "$job" == "complete" ] );then
 	echo -e "\tSystem-level processing raw experiment results..."
+	echo -e "\tNumber of sub-systems: $numSys"
 	mkdir -p $sysFileOut
 
 	python3 $sysResults_py -r $results/"matching_raw_0.res" -o $sysFileOut -s $samples -mt accuracy -al group --relativeTo healthy --sysMap $sysYeo --numSys $numSys
@@ -80,6 +81,7 @@ fi
 sysDifference_similarity_py=$scriptFolderPath/groupDiff_system.py
 if( [ "$job" == "sysDiff" ] || [ "$job" == "complete" ] );then
 	echo -e "\tSystem-level group difference and generating "$plotType" plots..."
+	echo -e "\tNumber of sub-systems: $numSys"
 	outpath=$results/sys_level/plots
 	mkdir -p $outpath
 

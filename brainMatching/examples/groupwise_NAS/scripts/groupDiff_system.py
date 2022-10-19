@@ -171,7 +171,7 @@ for ind, system in enumerate(sysNames):
         if pValue_parList[ind] <= 0.05:
             reportFile.write("****")
         if(corrected_pValue_parametric[ind]<=0.05):
-            reportFile.write("@@")
+            reportFile.write("@")
         reportFile.write("\t"+str(controlGroupNames[i])+" vs "+str(patientGroupNames[i])+"\t:\t%0.2f (%f -- %f) \n" % (effectSize_parList[ind],pValue_parList[ind],corrected_pValue_parametric[ind]))
 
     reportFile.write("============== Non-parametric test (Wilcoxon Signed-rank (if paired) test or Mann-Whitney U test (if not paired) for repeated measures with non normal distribution) ==============\n")
@@ -181,7 +181,7 @@ for ind, system in enumerate(sysNames):
         if pValue_nonparList[ind] <= 0.05:
             reportFile.write("****")
         if(corrected_pValue_nonparametric[ind]<=0.05):
-            reportFile.write("@@")
+            reportFile.write("@")
         reportFile.write("\t"+str(controlGroupNames[i])+" vs "+str(patientGroupNames[i])+"\t:\t%0.2f (%f -- %f) \n" % (effectSize_nonparList[ind],pValue_nonparList[ind],corrected_pValue_nonparametric[ind]))
 
     # Save Group diff without outliers results
