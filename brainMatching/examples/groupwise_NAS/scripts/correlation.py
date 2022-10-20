@@ -138,6 +138,12 @@ else:
     df = newDf[newDf['scq_total'].notna()]
     # print(df.shape, df['NNS'].describe())
 
+q1, q3 = np.percentile(df['NNS'], 25), np.percentile(df['NNS'], 75)
+iqr = q3-q1
+median = np.percentile(df['NNS'], 50)
+lowWhisker = q1 - (1.5*iqr)
+highWhisker = q3 + (1.5*iqr)
+
 ### Define Groups
 # Group 1 - all outliers
 g1 = df[df['NNS'] < lowWhisker]
