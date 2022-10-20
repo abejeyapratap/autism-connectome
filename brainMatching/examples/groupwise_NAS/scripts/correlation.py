@@ -138,11 +138,12 @@ else:
     df = newDf[newDf['scq_total'].notna()]
     # print(df.shape, df['NNS'].describe())
 
-q1, q3 = np.percentile(df['NNS'], 25), np.percentile(df['NNS'], 75)
+# old way of defining de-limiting boundaries
+""" q1, q3 = np.percentile(df['NNS'], 25), np.percentile(df['NNS'], 75)
 iqr = q3-q1
 median = np.percentile(df['NNS'], 50)
 lowWhisker = q1 - (1.5*iqr)
-highWhisker = q3 + (1.5*iqr)
+highWhisker = q3 + (1.5*iqr) """
 
 ### Define Groups
 # Group 1 - all outliers
@@ -188,10 +189,11 @@ for ind, patientsDf in enumerate(allGroups):
             plot=drawCorrelationPlot(nns, severity, r_spearman, p_spearman, "NNS",severityType,"", outputFile)
             plot.close()
     else:
-        reportFile.write(f"\t {groupNames[ind]}\t Pearson r-value:{r_pearson:.3f}\t p-value:{p_pearson:.5f}\n")
-        outputFile = f"{outputPath}/{groupNames[ind]}.png"
-        plot=drawCorrelationPlot(nns, severity, r_pearson, p_pearson, "NNS",severityType,"", outputFile)
-        plot.close()
+        if p_pearson <= 0.05:
+            reportFile.write(f"\t {groupNames[ind]}\t Pearson r-value:{r_pearson:.3f}\t p-value:{p_pearson:.5f}\n")
+            outputFile = f"{outputPath}/{groupNames[ind]}.png"
+            plot=drawCorrelationPlot(nns, severity, r_pearson, p_pearson, "NNS",severityType,"", outputFile)
+            plot.close()
 
 
 ### Group Difference between NNS of low ADOS vs high ADOS patients

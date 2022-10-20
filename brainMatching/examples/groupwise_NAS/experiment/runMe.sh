@@ -46,9 +46,9 @@ subjectsInfoPath='../data/tobacco_demographics.csv'
 
 ### output path for the results and plots
 # results=$experimentFolder/results
-results=$experimentFolder/results_schaefer/schaefer200_normEdg
+results=$experimentFolder/results_schaefer/schaefer220_normEdg
 plotsRoot=$experimentFolder/plots
-numSys=4
+numSys=7
 
 ########### run matching experiment ##############
 ##calculate distance between healthy controls using graph matching
@@ -105,10 +105,10 @@ fi
 correl_py=$scriptFolderPath/correlation.py
 if( [ "$job" == "correl" ] );then
 	echo -e "\tCalculating correlations at connectome-level..."
-	correlOut=$plotsRoot/correl
+	correlOut=$results/correl
 	mkdir -p $correlOut
-	correlConnectome=$correlOut/$connectomeName
-	mkdir -p $correlConnectome
+	correlConnectome=$correlOut
+	#mkdir -p $correlConnectome
 
 	python3 $correl_py --subjectsInfoPath $subjectsInfoPath -r $resultFileAccuracy -o $correlConnectome --ados
 	python3 $correl_py --subjectsInfoPath $subjectsInfoPath -r $resultFileAccuracy -o $correlConnectome --no-ados

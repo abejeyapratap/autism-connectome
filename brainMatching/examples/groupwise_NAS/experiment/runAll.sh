@@ -16,10 +16,10 @@ plotExtension=png #png or svg
 # ./runMe.sh grpDiff $plotExtension
 
 ## system level group difference (-- aka boxplot)
-./runMe.sh sysDiff $plotExtension
+# ./runMe.sh sysDiff $plotExtension
 
 ## Connectome-level correlations between sub-groups -- need to provide correct NAS.res path
-# ./runMe.sh correl
+./runMe.sh correl
 
 ## System-level correlations between sub-groups
 # ./runMe.sh correlSys
