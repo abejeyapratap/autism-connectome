@@ -17,7 +17,7 @@ parser.add_argument('-pt','--plotType', help='draw violin or box plot', required
 parser.add_argument('-tp','--timePoints', help='patients having any time points or only with three time points?', required=False,type=str,choices=['three','any'],default='any')
 parser.add_argument('--noHealthyPlot', help='do notplot healthy controls', required=False,action='store_true')
 parser.add_argument('-sf','--sysFiles', help='path to all system level NNS files', required=True)
-parser.add_argument('-ns','--numSys', help='number of Yeo sub-systems',required=False,type=int,choices=[7,8],default=8)
+parser.add_argument('-ns','--numSys', help='number of Yeo sub-systems',required=False,type=int,default=8)
 
 
 args = vars(parser.parse_args())
@@ -64,8 +64,13 @@ patientGroupNames = ["ASD"]
 
 ##############load results of average NNS processing ###################
 # systemMatchingPath = "../experiment/results/sys_level"
-sysNames = ["visual", "somatomotor", "dorsal", "ventral", "limbic", "frontoparietal", "defaultmode", "subcortical"][:numSys]
-fullSysNames = ["Visual", "Somatomotor", "Dorsal", "Ventral", "Limbic", "Frontoparietal", "Default Mode", "Sub-cortical"][:numSys]
+# ventral system might also be impt
+if numSys < 7:
+    sysNames = ["frontoparietal", "defaultmode", "limbic", "somatomotor", "dorsal"][:numSys]
+    fullSysNames = ["Frontoparietal", "Default Mode", "Limbic", "Somatomotor", "Dorsal"][:numSys]
+else:
+    sysNames = ["visual", "somatomotor", "dorsal", "ventral", "limbic", "frontoparietal", "defaultmode", "subcortical"][:numSys]
+    fullSysNames = ["Visual", "Somatomotor", "Dorsal", "Ventral", "Limbic", "Frontoparietal", "Default Mode", "Sub-cortical"][:numSys]
 # sysNames = ["visual"]
 
 # create output folders for each system

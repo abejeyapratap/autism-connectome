@@ -48,7 +48,7 @@ subjectsInfoPath='../data/tobacco_demographics.csv'
 # results=$experimentFolder/results
 results=$experimentFolder/results_schaefer/schaefer200_normEdg
 plotsRoot=$experimentFolder/plots
-numSys=7
+numSys=4
 
 ########### run matching experiment ##############
 ##calculate distance between healthy controls using graph matching
