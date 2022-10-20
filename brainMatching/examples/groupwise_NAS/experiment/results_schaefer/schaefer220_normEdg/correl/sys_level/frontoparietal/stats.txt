@@ -1,0 +1,11 @@
+<<<frontoparietal>>>
+============== Significant Correlations ==============
+	 c4_lowwhisker	 Pearson r-value:-0.242	 p-value:0.00276
+	 g4_median_q3	 Pearson r-value:-0.462	 p-value:0.00267
+	 all_patients	 Spearman r-value:-0.165	 p-value:0.03666
+
+============== Group Difference between NNS of low ADOS vs high ADOS patients ==============
+============== Parametric test (with Cohen's D) ==============
+***	 Effect Size:0.178	 p-value:0.02381
+============== Non-parametric test (Mann-Whitney U test (not paired) for repeated measures with non normal distribution) ==============
+	 Effect Size:0.254	 p-value:0.23742

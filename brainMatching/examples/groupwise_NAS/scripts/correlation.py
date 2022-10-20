@@ -178,7 +178,7 @@ for ind, patientsDf in enumerate(allGroups):
     r_spearman, p_spearman = stt.spearmanr(nns, severity)
 
     if isAdos:
-        if p_pearson <= 0.05:
+        if p_pearson >0:
             reportFile.write(f"\t {groupNames[ind]}\t Pearson r-value:{r_pearson:.3f}\t p-value:{p_pearson:.5f}\n")
             outputFile = f"{outputPath}/{groupNames[ind]}.png"
             plot=drawCorrelationPlot(nns, severity, r_pearson, p_pearson, "NNS",severityType,"", outputFile)

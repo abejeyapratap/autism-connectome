@@ -46,7 +46,7 @@ subjectsInfoPath='../data/tobacco_demographics.csv'
 
 ### output path for the results and plots
 # results=$experimentFolder/results
-results=$experimentFolder/results_schaefer/schaefer220_normEdg
+results=$experimentFolder/results_schaefer/schaefer200_normEdg
 plotsRoot=$experimentFolder/plots
 numSys=7
 
@@ -117,8 +117,8 @@ fi
 correlSys_py=$scriptFolderPath/correlationSystem.py
 if( [ "$job" == "correlSys" ] );then
 	echo -e "\tCalculating correlations at system-level..."
-	correlOut=$plotsRoot/correl
-	correlConnectome=$correlOut/$connectomeName/sys_level
+	correlOut=$results/correl
+	correlConnectome=$correlOut/sys_level
 	mkdir -p $correlConnectome
 	resPaths=$results/sys_level
 

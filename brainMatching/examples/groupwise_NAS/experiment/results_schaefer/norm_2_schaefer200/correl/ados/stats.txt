@@ -1,0 +1,9 @@
+============== Significant Correlations ==============
+	 g3_quartile1	 Pearson r-value:-0.195	 p-value:0.03283
+	 c4_lowwhisker	 Pearson r-value:-0.164	 p-value:0.04450
+
+============== Group Difference between NNS of low ADOS vs high ADOS patients ==============
+============== Parametric test (with Cohen's D) ==============
+	 Effect Size:0.124	 p-value:0.11616
+============== Non-parametric test (Mann-Whitney U test (not paired) for repeated measures with non normal distribution) ==============
+	 Effect Size:0.161	 p-value:0.45222
