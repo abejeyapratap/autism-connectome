@@ -9,11 +9,14 @@ parser = argparse.ArgumentParser(description='Calculate system-level correlation
 parser.add_argument('-sip','--subjectsInfoPath', help='path to the file that contains path to the connectomes', required=True)
 parser.add_argument('-r','--resultFile', help='file path to the results of the matching experiment', required=True)
 parser.add_argument('-o','--outputFile', help='file path to save the distribution of values for the two populations', required=True)
+parser.add_argument('-ns','--numSys', help='number of Yeo sub-systems',required=False,type=int,default=8)
+
 
 args = vars(parser.parse_args())
 subjectsInfoPath=args['subjectsInfoPath']
 resultFilePath=args['resultFile']
 outputPath=args['outputFile']
+numSys = args['numSys']
 
 
 # Load Tobacco data & processed NNS Scores
@@ -50,7 +53,7 @@ for i, p in enumerate(fullP):
     filteredAdos.append(ados[i])
 
 
-sysNames = ["defaultmode", "frontoparietal", "visual", "somatomotor", "dorsal", "ventral", "limbic", "subcortical"]
+sysNames = ["defaultmode", "frontoparietal", "limbic", "visual", "somatomotor", "dorsal", "ventral", "subcortical"][:numSys]
 
 # create output folders for each system
 outputFolder = outputPath
@@ -119,7 +122,8 @@ for ind, system in enumerate(sysNames):
         r_pearson, p_pearson = stt.pearsonr(nns, ados)
         r_spearman, p_spearman = stt.spearmanr(nns, ados)
 
-        if p_pearson <= 0.05:
+        pValCutoff = 1
+        if p_pearson <= pValCutoff:
             reportFile.write(f"\t {groupNames[ind]}\t Pearson r-value:{r_pearson:.3f}\t p-value:{p_pearson:.5f}\n")
             outputFile = f"{outFolder}/{groupNames[ind]}.png"
             plot=drawCorrelationPlot(nns, ados, r_pearson, p_pearson, "NNS","ADOS","", outputFile)

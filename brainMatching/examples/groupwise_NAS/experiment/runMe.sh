@@ -46,7 +46,7 @@ subjectsInfoPath='../data/tobacco_demographics.csv'
 
 ### output path for the results and plots
 # results=$experimentFolder/results
-results=$experimentFolder/results_schaefer/norm_2_schaefer220
+results=$experimentFolder/results_schaefer/schaefer200_normEdg
 plotsRoot=$experimentFolder/plots
 numSys=3
 
@@ -122,7 +122,7 @@ if( [ "$job" == "correlSys" ] );then
 	mkdir -p $correlConnectome
 	resPaths=$results/sys_level
 
-	python3 $correlSys_py --subjectsInfoPath $subjectsInfoPath -r $resPaths -o $correlConnectome
+	python3 $correlSys_py --subjectsInfoPath $subjectsInfoPath -r $resPaths -o $correlConnectome --numSys $numSys
 fi
 
 
