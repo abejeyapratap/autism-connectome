@@ -100,6 +100,7 @@ if isAdos:
     # print(newDf.head()) """
 
     df = newDf[newDf['ados_css'].notna()]
+    df = df.drop(df[(df['NNS']>highWhisker) | (df['NNS']<lowWhisker)].index)
     # print(df.shape, df['NNS'].describe())
 else:
     patients = []
@@ -147,7 +148,8 @@ highWhisker = q3 + (1.5*iqr) """
 
 ### Define Groups
 # Group 1 - all outliers
-g1 = df[df['NNS'] < lowWhisker]
+# g1 = df[df['NNS'] < lowWhisker]
+g1 = newDf.drop(newDf[(newDf['NNS']<=highWhisker) & (newDf['NNS']>=lowWhisker)].index)
 # print(g1.shape, stt.pearsonr(g1['NNS'], g1['ados_css']))
 g2 = df[(df['NNS'] >= lowWhisker) & (df['NNS'] < q1)] # low whisker to 1st quartile
 g3 = df[df['NNS'] >= q1] # 1st quartile to rest
@@ -157,6 +159,15 @@ c4 = df[df['NNS'] >= lowWhisker] # Low whisker & up
 c5 = df[(df['NNS'] >= q3) & (df['NNS'] < highWhisker)] # Quartile 3 & up
 g4 = df[(df['NNS'] >= median) & (df['NNS'] < q3)] # b/w median & Q3
 g6 = df[df['NNS'] >= median] # median & up
+
+""" print(g1.shape)
+print(g2.shape)
+print(g3.shape)
+print(c4.shape)
+print(c5.shape)
+print(g4.shape)
+print(g6.shape)
+exit() """
 
 
 reportFile=open(f"{outputPath}/stats.txt",'w')
@@ -177,8 +188,9 @@ for ind, patientsDf in enumerate(allGroups):
     r_pearson, p_pearson = stt.pearsonr(nns, severity)
     r_spearman, p_spearman = stt.spearmanr(nns, severity)
 
+    pValCutoff = 1
     if isAdos:
-        if p_pearson >0:
+        if p_pearson <= pValCutoff:
             reportFile.write(f"\t {groupNames[ind]}\t Pearson r-value:{r_pearson:.3f}\t p-value:{p_pearson:.5f}\n")
             outputFile = f"{outputPath}/{groupNames[ind]}.png"
             plot=drawCorrelationPlot(nns, severity, r_pearson, p_pearson, "NNS",severityType,"", outputFile)

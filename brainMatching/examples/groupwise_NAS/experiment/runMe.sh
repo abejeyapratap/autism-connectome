@@ -111,7 +111,7 @@ if( [ "$job" == "correl" ] );then
 	#mkdir -p $correlConnectome
 
 	python3 $correl_py --subjectsInfoPath $subjectsInfoPath -r $resultFileAccuracy -o $correlConnectome --ados
-	python3 $correl_py --subjectsInfoPath $subjectsInfoPath -r $resultFileAccuracy -o $correlConnectome --no-ados
+	# python3 $correl_py --subjectsInfoPath $subjectsInfoPath -r $resultFileAccuracy -o $correlConnectome --no-ados
 fi
 
 correlSys_py=$scriptFolderPath/correlationSystem.py

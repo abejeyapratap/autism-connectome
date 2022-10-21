@@ -19,10 +19,10 @@ plotExtension=png #png or svg
 # ./runMe.sh sysDiff $plotExtension
 
 ## Connectome-level correlations between sub-groups -- need to provide correct NAS.res path
-# ./runMe.sh correl
+./runMe.sh correl
 
 ## System-level correlations between sub-groups
-./runMe.sh correlSys
+# ./runMe.sh correlSys
 
 
 ## linear mixed effects model for calculating change of NAS with days since injury -- (done to calc correl)
