@@ -1,0 +1,8 @@
+<<<defaultmode>>>
+============== Significant Correlations ==============
+
+============== Group Difference between NNS of low ADOS vs high ADOS patients ==============
+============== Parametric test (with Cohen's D) ==============
+	 Effect Size:0.016	 p-value:0.83981
+============== Non-parametric test (Mann-Whitney U test (not paired) for repeated measures with non normal distribution) ==============
+	 Effect Size:-0.001	 p-value:0.99457

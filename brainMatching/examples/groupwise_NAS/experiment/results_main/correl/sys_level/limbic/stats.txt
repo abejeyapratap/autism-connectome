@@ -1,0 +1,16 @@
+<<<limbic>>>
+============== Significant Correlations ==============
+	 g1	 Pearson r-value:-0.494	 p-value:0.31960
+	 g2	 Pearson r-value:-0.031	 p-value:0.86055
+	 g3_quartile1	 Pearson r-value:-0.024	 p-value:0.79141
+	 c5_quartile3	 Pearson r-value:-0.214	 p-value:0.17960
+	 g6_median	 Pearson r-value:-0.056	 p-value:0.61823
+	 c4_lowwhisker	 Pearson r-value:-0.010	 p-value:0.90375
+	 g4_median_q3	 Pearson r-value:-0.013	 p-value:0.93618
+	 all_patients	 Pearson r-value:0.044	 p-value:0.57534
+
+============== Group Difference between NNS of low ADOS vs high ADOS patients ==============
+============== Parametric test (with Cohen's D) ==============
+	 Effect Size:-0.027	 p-value:0.73735
+============== Non-parametric test (Mann-Whitney U test (not paired) for repeated measures with non normal distribution) ==============
+	 Effect Size:-0.114	 p-value:0.65332
