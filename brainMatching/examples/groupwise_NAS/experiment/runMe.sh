@@ -45,8 +45,7 @@ samples=$experimentFolder/../data/subjectNames/schaefer_filtered.txt
 subjectsInfoPath='../data/tobacco_demographics.csv'
 
 ### output path for the results and plots
-# results=$experimentFolder/results
-results=$experimentFolder/results_schaefer/schaefer200_normEdg
+results=$experimentFolder/results_main # schaefer200
 plotsRoot=$experimentFolder/plots
 numSys=3
 
