@@ -87,7 +87,7 @@ if( [ "$job" == "sysDiff" ] || [ "$job" == "complete" ] );then
 	plotType=box #box or violin
 
 	python3 $sysDifference_similarity_py -r $resultFileAccuracy -o $outpath/ -s $samples --scoreType dist  --plotExtension $plotExtension --plotType $plotType --timePoints any --sysFiles $sysFileOut --numSys $numSys
-	python3 $sysDifference_similarity_py -r $resultFileAccuracy -o $outpath/ -s $samples --scoreType dist  --plotExtension $plotExtension --plotType $plotType --timePoints any --noHealthyPlot --sysFiles $sysFileOut --numSys $numSys
+	# python3 $sysDifference_similarity_py -r $resultFileAccuracy -o $outpath/ -s $samples --scoreType dist  --plotExtension $plotExtension --plotType $plotType --timePoints any --noHealthyPlot --sysFiles $sysFileOut --numSys $numSys
 fi
 
 if( [ "$job" == "grpDiff" ] || [ "$job" == "complete" ] );then
@@ -98,7 +98,7 @@ if( [ "$job" == "grpDiff" ] || [ "$job" == "complete" ] );then
 	plotType=box #box or violin
 
 	python3 $groupDifference_similarity_py -r $resultFileAccuracy -o $outpath/ -s $samples --scoreType dist  --plotExtension $plotExtension --plotType $plotType --timePoints any
-	python3 $groupDifference_similarity_py -r $resultFileAccuracy -o $outpath/ -s $samples --scoreType dist  --plotExtension $plotExtension --plotType $plotType --timePoints any --noHealthyPlot
+	# python3 $groupDifference_similarity_py -r $resultFileAccuracy -o $outpath/ -s $samples --scoreType dist  --plotExtension $plotExtension --plotType $plotType --timePoints any --noHealthyPlot
 fi
 
 correl_py=$scriptFolderPath/correlation.py

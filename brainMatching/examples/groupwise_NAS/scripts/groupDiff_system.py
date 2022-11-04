@@ -66,8 +66,8 @@ patientGroupNames = ["ASD"]
 # systemMatchingPath = "../experiment/results/sys_level"
 # ventral system might also be impt
 if numSys < 7:
-    sysNames = ["frontoparietal", "defaultmode", "limbic", "somatomotor", "dorsal"][:numSys]
-    fullSysNames = ["Frontoparietal", "Default Mode", "Limbic", "Somatomotor", "Dorsal"][:numSys]
+    sysNames = ["defaultmode", "frontoparietal", "limbic", "somatomotor", "dorsal"][:numSys]
+    fullSysNames = ["Default Mode", "Frontoparietal", "Limbic", "Somatomotor", "Dorsal"][:numSys]
 else:
     sysNames = ["visual", "somatomotor", "dorsal", "ventral", "limbic", "frontoparietal", "defaultmode", "subcortical"][:numSys]
     fullSysNames = ["Visual", "Somatomotor", "Dorsal", "Ventral", "Limbic", "Frontoparietal", "Default Mode", "Sub-cortical"][:numSys]
@@ -95,6 +95,7 @@ pValue_nonparList = np.zeros(numSys)
 pValue_parList_noOutliers = np.zeros(numSys)
 pValue_nonparList_noOutliers = np.zeros(numSys)
 
+### First, calculate group diffs (p-vals & ES) ###
 colors=['aqua','darkorchid']
 for ind, system in enumerate(sysNames):
     resultFile = f"{systemMatchingPath}/{system}.res"
@@ -110,8 +111,6 @@ for ind, system in enumerate(sysNames):
     for i in range(numSubjects):
         scores[i] = float(fileContent[7].split('\t')[i])
 
-
-    ######################## calculate group difference ########################
     """ effectSize_parametric=np.zeros(len(patientGroups))
     effectSize_nonparametric=np.zeros(len(patientGroups))
     pValue_parametric=np.zeros(len(patientGroups))
@@ -149,7 +148,22 @@ print(corrected_pValue_parametric)
 #print(corrected_pValue_nonparametric)
 exit() """
 
+### Now, output stats & plots ###
 for ind, system in enumerate(sysNames):
+    # re-read scores for accurate stats & plots
+    resultFile = f"{systemMatchingPath}/{system}.res"
+
+    fileContent =  open(resultFile,"r").read().splitlines()
+    numNodes = int(fileContent[1].split('\t')[0])
+    numSubjects = int(fileContent[1].split('\t')[1])
+    measureType = str(fileContent[3]) 
+    scoreName = str(fileContent[5]) 
+    scores = np.zeros(numSubjects)
+
+    for i in range(numSubjects):
+        scores[i] = float(fileContent[7].split('\t')[i])
+
+
     outputPath = f"{outputFolder}/{sysNames[ind]}/"
     histogramPath=outputPath+"histogram/"+timePoints+"_"+measureType+"_"+scoreType+"_"+str(patientGroupNames[0])+"_"+str(controlGroupNames[0])+"."+plotExtension
     drawHistogram2Dataset(scores[healthy],scores[patientGroups[0]],histogramPath,effectSize_parList[ind],pValue_parList[ind],'','',controlGroupNames[0],patientGroupNames[0],"",xLabel=measureType,yLabel="frequency",color1='dodgerblue',color2='magenta')
@@ -236,7 +250,7 @@ for ind, system in enumerate(sysNames):
     scoreName="NNS (%)"
     #generate enough empty space above and below boxes
     yLim=[minY-offset/2.0,maxY+offset] ## use these lines to  make space specific to figure
-    # yLim=[67,102] ## use these lines to make the space constant (such as across different plots)
+    # yLim=[30,102] ## use these lines to make the space constant (such as across different plots)
     if plotType=="box":
         drawBoxPlot(data,dataLabels,title,outputPath,xLabel='',yLabel=scoreName,colors=colors,rotation=0,plotScatter=True,yLim=yLim,middleLine=midLine) #since we use Mann-Whitney U test for group dofference, we should plot median line in boxplots
     elif plotType=="violin":

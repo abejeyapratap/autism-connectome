@@ -1,11 +1,11 @@
 ============== Dataset statistics ==============
-	Healthy	 numSubjects:150	median:81.544	mean:80.695	var:58.320	std:7.637 
-	Patients	 numSubjects:163	median:80.278	mean:79.177	var:64.474	std:8.030 
+	Healthy	 numSubjects:150	median:79.340	mean:78.780	var:23.497	std:4.847 
+	Patients	 numSubjects:163	median:77.933	mean:76.438	var:70.436	std:8.393 
 ============== F/Barlett/Levene Test for checking equalness of variance of patients relative to healthy controls ==============
 Discard outliers:True
-	Healthy vs Patients	 F-test:0.557386	Bartlett:0.884537	Levene:0.562663 
+	Healthy vs Patients	 F-test:0.099841	Bartlett:0.199932	Levene:0.147374 
 Discard outliers:False
-	Healthy vs Patients	 F-test:0.267265	Bartlett:0.535243	Levene:0.888952 
+	Healthy vs Patients	 F-test:0.000000	Bartlett:0.000000	Levene:0.002917 
 ============== Group Difference (outliers): any accuracy  dist score==============
 ============== Parametric test (with Cohen's D) ==============
 ****@	TDC vs ASD	:	0.34 (0.002584 -- 0.003876) 
