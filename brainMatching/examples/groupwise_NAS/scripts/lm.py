@@ -2,11 +2,21 @@ import numpy as np
 import pandas as pd
 import scipy.stats as stt
 from statsmodels.formula.api import ols
+from sklearn.preprocessing import MinMaxScaler
 
-dfPath = "../data/lm_clustered.csv"
+level = "fpn" # connectome, dmn, fpn
+dfPath = f"../data/cluster/{level}_clustered.csv"
 
 df=pd.read_csv(dfPath)
 df = df.drop('Unnamed: 0', axis=1)
+
+# print(df.head())
+# Normalize 3 data columns for correct coefficients
+df["ados"] = MinMaxScaler().fit_transform(np.array(df["ados"]).reshape(-1,1))
+df["NNS"] = MinMaxScaler().fit_transform(np.array(df["NNS"]).reshape(-1,1))
+df["Age"] = MinMaxScaler().fit_transform(np.array(df["Age"]).reshape(-1,1))
+
+# print(df.head())
 
 g0 = df[df['cluster'] == 0]
 g1 = df[df['cluster'] == 1]
@@ -15,16 +25,11 @@ g2 = df[df['cluster'] == 2]
 allDf = [df, g0, g1, g2]
 labels = ["All Patients", "G0 cluster", "G1 cluster", "G2 cluster"]
 
-""" model_all = ols("NNS ~ ados + Age", data=df)
-results_all = model_all.fit()
-f.write('### ols("NNS ~ ados + Age", data=df) ###\n')
-f.write(results_all.summary())
-f.write("\n\n") """
-
+# rString = "NNS ~ ados + Age" // Age doesn't seem to be related to NNS
 rString = "ados ~ NNS + Age"
-rString = "NNS ~ ados + Age"
 
-with open("ols_res.txt", "w") as f:
+outFolder = "../experiment/results_main/lm/" + level
+with open(f"{outFolder}/{level}_ols.txt", "w") as f:
     for i, df1 in enumerate(allDf):
         f.write(f"\t\t\t{labels[i]}\n")
         model = ols(rString, data=df1)
