@@ -1,5 +1,4 @@
 import numpy as np
-import scipy.stats as stt
 import helpers as helper
 
 DELIM = 150
@@ -28,7 +27,7 @@ colors=['steelblue', '#AB3E16']*3
 # colors=['#351C4D', '#AB3E16','#849974','#2096BA','#F7DFD4','#F5AB99']
 
 plotExt = ".svg"
-outputPath = "../experiment/results_main/plots/groupdiff" + plotExt
+outputPath = "../../experiment/results_main/plots/groupdiff" + plotExt
 helper.drawBoxPlot(data,dataLabels,"",outputPath,xLabel='',yLabel="Network Normality Score (%)",colors=colors,rotation=0,plotScatter=True,yLim=[30,102],middleLine="mean")
 
 
