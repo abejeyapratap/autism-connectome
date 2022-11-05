@@ -1,0 +1,132 @@
+			All Patients
+### Function call: ols("ados ~ NNS + Age", data=df1) ###
+                            OLS Regression Results                            
+==============================================================================
+Dep. Variable:                   ados   R-squared:                       0.078
+Model:                            OLS   Adj. R-squared:                  0.065
+Method:                 Least Squares   F-statistic:                     6.182
+Date:                Sat, 05 Nov 2022   Prob (F-statistic):            0.00265
+Time:                        01:21:04   Log-Likelihood:                -304.61
+No. Observations:                 149   AIC:                             615.2
+Df Residuals:                     146   BIC:                             624.2
+Df Model:                           2                                         
+Covariance Type:            nonrobust                                         
+==============================================================================
+                 coef    std err          t      P>|t|      [0.025      0.975]
+------------------------------------------------------------------------------
+Intercept      9.5928      3.372      2.845      0.005       2.929      16.256
+NNS           -0.0587      0.042     -1.411      0.160      -0.141       0.023
+Age            0.1695      0.056      3.013      0.003       0.058       0.281
+==============================================================================
+Omnibus:                        8.000   Durbin-Watson:                   1.784
+Prob(Omnibus):                  0.018   Jarque-Bera (JB):                8.093
+Skew:                          -0.570   Prob(JB):                       0.0175
+Kurtosis:                       3.074   Cond. No.                     1.71e+03
+==============================================================================
+
+Notes:
+[1] Standard Errors assume that the covariance matrix of the errors is correctly specified.
+[2] The condition number is large, 1.71e+03. This might indicate that there are
+strong multicollinearity or other numerical problems.
+
+
+
+			G0 cluster
+### Function call: ols("ados ~ NNS + Age", data=df1) ###
+                            OLS Regression Results                            
+==============================================================================
+Dep. Variable:                   ados   R-squared:                       0.683
+Model:                            OLS   Adj. R-squared:                  0.640
+Method:                 Least Squares   F-statistic:                     16.12
+Date:                Sat, 05 Nov 2022   Prob (F-statistic):           0.000183
+Time:                        01:21:04   Log-Likelihood:                -23.616
+No. Observations:                  18   AIC:                             53.23
+Df Residuals:                      15   BIC:                             55.90
+Df Model:                           2                                         
+Covariance Type:            nonrobust                                         
+==============================================================================
+                 coef    std err          t      P>|t|      [0.025      0.975]
+------------------------------------------------------------------------------
+Intercept     26.0378      7.149      3.642      0.002      10.800      41.275
+NNS           -0.3289      0.082     -4.031      0.001      -0.503      -0.155
+Age            0.2475      0.144      1.717      0.107      -0.060       0.555
+==============================================================================
+Omnibus:                        0.713   Durbin-Watson:                   1.776
+Prob(Omnibus):                  0.700   Jarque-Bera (JB):                0.043
+Skew:                           0.085   Prob(JB):                        0.979
+Kurtosis:                       3.169   Cond. No.                     2.38e+03
+==============================================================================
+
+Notes:
+[1] Standard Errors assume that the covariance matrix of the errors is correctly specified.
+[2] The condition number is large, 2.38e+03. This might indicate that there are
+strong multicollinearity or other numerical problems.
+
+
+
+			G1 cluster
+### Function call: ols("ados ~ NNS + Age", data=df1) ###
+                            OLS Regression Results                            
+==============================================================================
+Dep. Variable:                   ados   R-squared:                       0.034
+Model:                            OLS   Adj. R-squared:                 -0.208
+Method:                 Least Squares   F-statistic:                    0.1394
+Date:                Sat, 05 Nov 2022   Prob (F-statistic):              0.872
+Time:                        01:21:04   Log-Likelihood:                -19.627
+No. Observations:                  11   AIC:                             45.25
+Df Residuals:                       8   BIC:                             46.45
+Df Model:                           2                                         
+Covariance Type:            nonrobust                                         
+==============================================================================
+                 coef    std err          t      P>|t|      [0.025      0.975]
+------------------------------------------------------------------------------
+Intercept     21.6927     26.315      0.824      0.434     -38.989      82.375
+NNS           -0.2034      0.385     -0.528      0.612      -1.092       0.685
+Age            0.0045      0.175      0.025      0.980      -0.399       0.408
+==============================================================================
+Omnibus:                        1.657   Durbin-Watson:                   2.377
+Prob(Omnibus):                  0.437   Jarque-Bera (JB):                1.102
+Skew:                          -0.715   Prob(JB):                        0.576
+Kurtosis:                       2.399   Cond. No.                     3.60e+03
+==============================================================================
+
+Notes:
+[1] Standard Errors assume that the covariance matrix of the errors is correctly specified.
+[2] The condition number is large, 3.6e+03. This might indicate that there are
+strong multicollinearity or other numerical problems.
+
+
+
+			G2 cluster
+### Function call: ols("ados ~ NNS + Age", data=df1) ###
+                            OLS Regression Results                            
+==============================================================================
+Dep. Variable:                   ados   R-squared:                       0.116
+Model:                            OLS   Adj. R-squared:                  0.101
+Method:                 Least Squares   F-statistic:                     7.660
+Date:                Sat, 05 Nov 2022   Prob (F-statistic):           0.000748
+Time:                        01:21:04   Log-Likelihood:                -213.66
+No. Observations:                 120   AIC:                             433.3
+Df Residuals:                     117   BIC:                             441.7
+Df Model:                           2                                         
+Covariance Type:            nonrobust                                         
+==============================================================================
+                 coef    std err          t      P>|t|      [0.025      0.975]
+------------------------------------------------------------------------------
+Intercept     14.8535      3.911      3.798      0.000       7.107      22.600
+NNS           -0.1135      0.048     -2.347      0.021      -0.209      -0.018
+Age            0.1284      0.047      2.744      0.007       0.036       0.221
+==============================================================================
+Omnibus:                        1.376   Durbin-Watson:                   1.747
+Prob(Omnibus):                  0.502   Jarque-Bera (JB):                1.172
+Skew:                          -0.008   Prob(JB):                        0.557
+Kurtosis:                       2.516   Cond. No.                     2.33e+03
+==============================================================================
+
+Notes:
+[1] Standard Errors assume that the covariance matrix of the errors is correctly specified.
+[2] The condition number is large, 2.33e+03. This might indicate that there are
+strong multicollinearity or other numerical problems.
+
+
+
