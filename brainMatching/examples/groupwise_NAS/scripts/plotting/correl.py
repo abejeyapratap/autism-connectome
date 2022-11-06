@@ -37,15 +37,15 @@ for ind, patientsDf in enumerate(allGroups):
     print(r_pearson, p_pearson)
 
     if p_pearson < 0.0005:
-        text = 'r='+str("{0:.2f}".format(r_pearson))+'\np<5e-3'
+        text = 'r='+str("{0:.2f}".format(r_pearson))+'\np<2e-3'
     else:
         text = ""
 
-    if groupNames[ind] == "cluster1":
-        colors = ["dodgerblue", "#00b33c"]
+    if groupNames[ind].startswith("cluster1"):
+        colors = ["dodgerblue", "#0066cc"]
     else:
-        colors = ["dodgerblue", "#00b33c"]
-    colors = ["#351C4D", "darkorchid"]
+        colors = ["#00b33c", "#007326"]
+    # colors = ["#351C4D", "darkorchid"]
 
     cutoff = 0.05
     if p_pearson <= cutoff:
