@@ -1,0 +1,93 @@
+			All Patients
+### Function call: ols("ados ~ NNS_FPN + Age", data=df1) ###
+                            OLS Regression Results                            
+==============================================================================
+Dep. Variable:                   ados   R-squared:                       0.092
+Model:                            OLS   Adj. R-squared:                  0.079
+Method:                 Least Squares   F-statistic:                     7.353
+Date:                Wed, 09 Nov 2022   Prob (F-statistic):           0.000907
+Time:                        22:14:47   Log-Likelihood:                 23.871
+No. Observations:                 149   AIC:                            -41.74
+Df Residuals:                     146   BIC:                            -32.73
+Df Model:                           2                                         
+Covariance Type:            nonrobust                                         
+==============================================================================
+                 coef    std err          t      P>|t|      [0.025      0.975]
+------------------------------------------------------------------------------
+Intercept      0.7055      0.080      8.869      0.000       0.548       0.863
+NNS_FPN       -0.1952      0.095     -2.044      0.043      -0.384      -0.007
+Age            0.2311      0.077      3.000      0.003       0.079       0.383
+==============================================================================
+Omnibus:                        6.704   Durbin-Watson:                   1.769
+Prob(Omnibus):                  0.035   Jarque-Bera (JB):                6.886
+Skew:                          -0.524   Prob(JB):                       0.0320
+Kurtosis:                       2.898   Cond. No.                         9.43
+==============================================================================
+
+Notes:
+[1] Standard Errors assume that the covariance matrix of the errors is correctly specified.
+
+
+
+			G0 cluster
+### Function call: ols("ados ~ NNS_FPN + Age", data=df1) ###
+                            OLS Regression Results                            
+==============================================================================
+Dep. Variable:                   ados   R-squared:                       0.064
+Model:                            OLS   Adj. R-squared:                 -0.046
+Method:                 Least Squares   F-statistic:                    0.5856
+Date:                Wed, 09 Nov 2022   Prob (F-statistic):              0.568
+Time:                        22:14:47   Log-Likelihood:                 8.1338
+No. Observations:                  20   AIC:                            -10.27
+Df Residuals:                      17   BIC:                            -7.280
+Df Model:                           2                                         
+Covariance Type:            nonrobust                                         
+==============================================================================
+                 coef    std err          t      P>|t|      [0.025      0.975]
+------------------------------------------------------------------------------
+Intercept      0.8065      0.141      5.725      0.000       0.509       1.104
+NNS_FPN       -0.3062      0.325     -0.943      0.359      -0.992       0.379
+Age            0.1590      0.204      0.780      0.446      -0.271       0.589
+==============================================================================
+Omnibus:                        1.820   Durbin-Watson:                   1.610
+Prob(Omnibus):                  0.403   Jarque-Bera (JB):                1.351
+Skew:                          -0.435   Prob(JB):                        0.509
+Kurtosis:                       2.070   Cond. No.                         10.4
+==============================================================================
+
+Notes:
+[1] Standard Errors assume that the covariance matrix of the errors is correctly specified.
+
+
+
+			G1 cluster
+### Function call: ols("ados ~ NNS_FPN + Age", data=df1) ###
+                            OLS Regression Results                            
+==============================================================================
+Dep. Variable:                   ados   R-squared:                       0.072
+Model:                            OLS   Adj. R-squared:                  0.058
+Method:                 Least Squares   F-statistic:                     4.924
+Date:                Wed, 09 Nov 2022   Prob (F-statistic):            0.00873
+Time:                        22:14:47   Log-Likelihood:                 17.355
+No. Observations:                 129   AIC:                            -28.71
+Df Residuals:                     126   BIC:                            -20.13
+Df Model:                           2                                         
+Covariance Type:            nonrobust                                         
+==============================================================================
+                 coef    std err          t      P>|t|      [0.025      0.975]
+------------------------------------------------------------------------------
+Intercept      0.6284      0.116      5.414      0.000       0.399       0.858
+NNS_FPN       -0.1039      0.141     -0.737      0.462      -0.383       0.175
+Age            0.2466      0.084      2.924      0.004       0.080       0.413
+==============================================================================
+Omnibus:                        5.664   Durbin-Watson:                   1.743
+Prob(Omnibus):                  0.059   Jarque-Bera (JB):                5.641
+Skew:                          -0.512   Prob(JB):                       0.0596
+Kurtosis:                       2.954   Cond. No.                         12.7
+==============================================================================
+
+Notes:
+[1] Standard Errors assume that the covariance matrix of the errors is correctly specified.
+
+
+
