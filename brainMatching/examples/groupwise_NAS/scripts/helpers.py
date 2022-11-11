@@ -133,8 +133,10 @@ def calculateGroupDifference(data1,data2,parametric=True,paired=False,discardOut
             else:### if variance of one of the data is zero while the other is not, then consider this as the two dataset has different variance
                 pVal=0
             if(pVal>0.05):
+                print("student")
                 statistic, pValue = stt.ttest_ind(data1,data2,equal_var=True)
             else:
+                print("welch")
                 statistic, pValue = stt.ttest_ind(data1,data2,equal_var=False)
             
             #calculate effectSize using Cohen's D for t-test : https://en.wikipedia.org/wiki/Effect_size#Cohen's_d
