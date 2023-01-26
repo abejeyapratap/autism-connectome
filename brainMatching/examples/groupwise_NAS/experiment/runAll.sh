@@ -4,7 +4,7 @@
 plotExtension=png #png or svg
 
 ###run experiments
-# ./runMe.sh expRun
+./runMe.sh expRun
 
 ##process connectomes at connectome-level
 # ./runMe.sh expProc
@@ -16,7 +16,7 @@ plotExtension=png #png or svg
 # ./runMe.sh grpDiff $plotExtension
 
 ## system level group difference (-- aka boxplot)
-./runMe.sh sysDiff $plotExtension
+# ./runMe.sh sysDiff $plotExtension
 
 ## Connectome-level correlations between sub-groups -- need to provide correct NAS.res path
 # ./runMe.sh correl

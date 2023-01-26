@@ -35,17 +35,20 @@ connectomeName="schaefer" # for correlation
 # samples=$experimentFolder/../data/subjectNames/desikan_filtered.txt
 # samples=$experimentFolder/../data/smallD.txt
 # samples=$experimentFolder/../data/desikan_male.txt
-connectomes=$experimentFolder/../data/connectomes_schaefer/schaefer_200 ## 200 ROIs instead of 220
+# connectomes=$experimentFolder/../data/connectomes_schaefer/schaefer_200 ## 200 ROIs instead of 220
+connectomes=$experimentFolder/../data/abide_nyu
+samples=$experimentFolder/../data/smallAbide.txt
 # samples=$experimentFolder/../data/smallS.txt
 # samples=$experimentFolder/../data/schaefer_below12.txt
 # samples=$experimentFolder/../data/subjectNames/schaefer_male.txt
-samples=$experimentFolder/../data/subjectNames/schaefer_filtered.txt
+# samples=$experimentFolder/../data/subjectNames/schaefer_filtered.txt
 # connectomes=$experimentFolder/../data/connectomes_schaefer/norm_schaefer_200_100 # MY manual normalization
 # connectomes=$experimentFolder/../data/connectomes_schaefer
 subjectsInfoPath='../data/tobacco_demographics.csv'
 
 ### output path for the results and plots
-results=$experimentFolder/results_main # schaefer200
+results=$experimentFolder/results_abide
+# results=$experimentFolder/results_main # schaefer200
 plotsRoot=$experimentFolder/plots
 numSys=3
 
