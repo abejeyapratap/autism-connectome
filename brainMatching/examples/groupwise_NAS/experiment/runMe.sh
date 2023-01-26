@@ -21,8 +21,8 @@ mixedModel_plot_similarity_time_py=$scriptFolderPath/mixedModel_plot_similarity_
 assignmentCost=" -assCost edgesIgnoreDiag"
 pathType="-pathType direct" # could have been "-pathType shortestPath" or "-pathType wCommunicability -pathLength 2"
 
-# preprocessGraphs="-preprocessGraphs none"
-preprocessGraphs="-preprocessGraphs normalizeEdges"
+preprocessGraphs="-preprocessGraphs none"
+# preprocessGraphs="-preprocessGraphs normalizeEdges"
 # preprocessGraphs="-preprocessGraphs logScaleEdgesStructure"
 # preprocessGraphs="-preprocessGraphs logScaleEdgesStructure_normalizeEdges"
 
@@ -54,7 +54,13 @@ numSys=3
 if( [ "$job" == "expRun" ] || [ "$job" == "complete" ] );then
 	echo -e "\tRunning groupwise brain matching experiment..."
 	mkdir -p $results
-	$brainMatch -experiment groupwise match -groups all all -data matrix 1 -dti $connectomes/ -samples $samples -printMatches -printSimilarity -modality str_str -outputPath $results/matching_raw $pathType $assignmentCost $preprocessGraphs
+
+	# structural connectomes
+	#$brainMatch -experiment groupwise match -groups all all -data matrix 1 -dti $connectomes/ -samples $samples -printMatches -printSimilarity -modality str_str -outputPath $results/matching_raw $pathType $assignmentCost $preprocessGraphs
+	
+	# funtional connectomes (postive & full)
+	$brainMatch -experiment groupwise match -groups all all -data matrix 1 -fmri $connectomes/ -samples $samples -printMatches -printSimilarity -modality func_func -funcConn positive positive -outputPath $results/matching_raw $pathType $assignmentCost $preprocessGraphs
+	# $brainMatch -experiment groupwise match -groups all all -data matrix 1 -fmri $connectomes/ -samples $samples -printMatches -printSimilarity -modality func_func -funcConn full -outputPath $results/matching_raw $pathType $assignmentCost $preprocessGraphs
 fi
 
 ########### system & connectome level analysis ##############
