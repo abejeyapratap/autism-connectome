@@ -22,7 +22,7 @@ with open("abide_nyu_missing.txt", "w") as file:
             file.write(f +"\n")
 
 print("Missing:", count)
-quit()
+# quit()
 
 """ 
 # check if 200x200 connectome (it's actually 176x200)
