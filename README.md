@@ -1,3 +1,4 @@
-# Structural Connectivity Differences using Graph Matching in Autism Spectrum Disorder
+# Structural Network Topological Analysis of Alterations in Autism
 
-## CS-T680 Final Project
+This research work began as a final project for a graduate computational neuroscience class.
+`brainMatching` contains the source code and files for all experiments run.
