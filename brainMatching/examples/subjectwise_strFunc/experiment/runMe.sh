@@ -41,7 +41,9 @@ funcConn=positive #positive or negative
 if( [ "$job" == "expRun" ] || [ "$job" == "complete" ] );then
 	echo -e "\tRunning groupwise brain matching experiment..."
 	mkdir -p $results/rawData/subjectwise $results/rawData/permutationTest
-	$brainMatch -experiment subjectwise match -permutation 10 -modality str_func -funcConn $funcConn -data matrix 1 -dti $connectomes_str/ -fmri $connectomes_func/ -samples $samples -printMatches -outputPath $results/rawData/subjectwise/direct_vs_positive $pathType $assignmentCost $preprocessGraphs
+	$brainMatch -experiment subjectwise match -permutation 1 -modality str_func -funcConn $funcConn -data matrix 1 -dti $connectomes_str/ -fmri $connectomes_func/ -samples $samples -printMatches -outputPath $results/rawData/subjectwise/direct_vs_positive $pathType $assignmentCost $preprocessGraphs
+	# mkdir -p $results/rawData/subjectwise $results/rawData/permutationTest
+	# $brainMatch -experiment subjectwise match -permutation 10 -modality str_func -funcConn $funcConn -data matrix 1 -dti $connectomes_str/ -fmri $connectomes_func/ -samples $samples -printMatches -outputPath $results/rawData/subjectwise/direct_vs_positive $pathType $assignmentCost $preprocessGraphs
 
 	
 	### do permutation testing by shuffling 
