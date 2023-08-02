@@ -1,0 +1,1 @@
+This folder provides a wrapper around the Brain Connectivity Toolbox (BCT) defined by Sporns et al. The wrapper augments the existing BCT implementation to streamline connectomic analyses. There are also examples of how to use the wrapper on a sample dataset available in the `connectomes` folder.
