@@ -1,4 +1,4 @@
-name: connectomics_temp
+name: connectomics
 channels:
   - defaults
 dependencies:
